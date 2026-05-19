@@ -57,7 +57,7 @@ let contadorLimpezas = 1;
 let periodoAtual = "today";
 
 const GOOGLE_SCRIPT_URL =
-  "https://script.google.com/macros/s/AKfycbwnVs2xlH-KaHcgPKPByxvoZbtEVo-Gz5WFQvfTnl5rIyYIlzwixroXzFkA9cdgSw/exec";
+  "https://script.google.com/macros/s/AKfycbzgHwVU-ZEdKYrnpqPtOi9dtW_Vp8BZ1PKu6Ywj5AYlzRbLCu25VaZSLHpTB-8-sAhC/exec";
 
 // =====================
 // FILA DE RETRIES - GARANTIR DADOS NÃO SÃO PERDIDOS
