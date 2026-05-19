@@ -57,7 +57,113 @@ let contadorLimpezas = 1;
 let periodoAtual = "today";
 
 const GOOGLE_SCRIPT_URL =
-  "https://script.google.com/macros/s/AKfycbxkZNOZfktp81cqnIChafBbeP-XVLHqpdncrpoiBBvu10kxp9vG68Bi6bm2KW2z3mDf/exec";
+  "https://script.google.com/macros/s/AKfycbwnVs2xlH-KaHcgPKPByxvoZbtEVo-Gz5WFQvfTnl5rIyYIlzwixroXzFkA9cdgSw/exec";
+
+// =====================
+// FILA DE RETRIES - GARANTIR DADOS NÃO SÃO PERDIDOS
+// =====================
+
+class FilaSheets {
+  constructor() {
+    this.filaLocal = [];
+    this.tentandoProcessar = false;
+    this.carregarFila();
+    this.processarFilaPeriodicamente();
+  }
+
+  carregarFila() {
+    const salva = localStorage.getItem("filaSheetsLocal");
+    if (salva) {
+      try {
+        this.filaLocal = JSON.parse(salva);
+        console.log(`[FilaSheets] Carregadas ${this.filaLocal.length} requisições pendentes`);
+      } catch (e) {
+        console.error("[FilaSheets] Erro ao carregar fila:", e);
+        this.filaLocal = [];
+      }
+    }
+  }
+
+  salvarFila() {
+    localStorage.setItem("filaSheetsLocal", JSON.stringify(this.filaLocal));
+  }
+
+  adicionar(acao, dados) {
+    const item = {
+      id: `${acao}-${Date.now()}-${Math.random()}`,
+      acao,
+      dados,
+      criado: new Date().toISOString(),
+      tentativas: 0
+    };
+    this.filaLocal.push(item);
+    this.salvarFila();
+    console.log(`[FilaSheets] Adicionado à fila (pendentes: ${this.filaLocal.length})`, item.id);
+  }
+
+  async processar() {
+    if (this.tentandoProcessar || this.filaLocal.length === 0) {
+      return;
+    }
+
+    this.tentandoProcessar = true;
+    let processados = 0;
+    let falhados = 0;
+
+    for (let i = 0; i < this.filaLocal.length; i++) {
+      const item = this.filaLocal[i];
+      item.tentativas++;
+
+      try {
+        const resp = await fetch(GOOGLE_SCRIPT_URL, {
+          method: "POST",
+          mode: "cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: item.acao === "salvar" ? "salvar" : "atualizar",
+            limpeza: item.dados
+          })
+        });
+
+        if (!resp.ok) {
+          throw new Error(`HTTP ${resp.status}`);
+        }
+
+        const data = await resp.json().catch(() => null);
+        if (data && data.sucesso) {
+          this.filaLocal.splice(i, 1);
+          i--;
+          processados++;
+          console.log(`[FilaSheets] Sucesso (retry): ${item.id}`);
+        } else {
+          falhados++;
+        }
+      } catch (erro) {
+        console.warn(`[FilaSheets] Falha na tentativa ${item.tentativas}: ${item.id}`, erro);
+        if (item.tentativas >= 5) {
+          console.error(`[FilaSheets] Máximo de tentativas atingido: ${item.id}`);
+          this.filaLocal.splice(i, 1);
+          i--;
+        }
+        falhados++;
+      }
+    }
+
+    this.salvarFila();
+    this.tentandoProcessar = false;
+
+    if (processados > 0) {
+      console.log(`[FilaSheets] Processadas ${processados} requisições da fila`);
+    }
+  }
+
+  processarFilaPeriodicamente() {
+    // Tenta processar a fila a cada 30 segundos
+    setInterval(() => this.processar(), 30000);
+  }
+}
+
+const filaSheetsLocal = new FilaSheets();
 
 
   const mapaImoveisAirbnb = {
@@ -715,7 +821,7 @@ finishSaveBtn.addEventListener("click", () => {
 
 async function salvarLimpezaSheets(limpeza) {
   try {
-    await fetch(GOOGLE_SCRIPT_URL, {
+    const resp = await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
       mode: "cors",
       headers: {
@@ -726,14 +832,34 @@ async function salvarLimpezaSheets(limpeza) {
         limpeza: limpeza
       })
     });
+
+    if (!resp.ok) {
+      const txt = await resp.text().catch(() => "<no-body>");
+      throw new Error(`Sheets request failed: ${resp.status} ${resp.statusText} - ${txt}`);
+    }
+
+    // tentar ler json de resposta (se existir) para verificar sucesso
+    try {
+      const data = await resp.json();
+      if (data && data.sucesso === false) {
+        console.error("Sheets retornou sucesso=false:", data);
+        throw new Error(data.erro || "Falha desconhecida");
+      }
+      return data;
+    } catch (e) {
+      // resposta não é JSON, mas o POST foi concluído
+      return null;
+    }
   } catch (erro) {
-    console.error("Erro ao salvar no Sheets:", erro);
+    console.error("Erro ao salvar no Sheets (adicionando à fila):", erro);
+    filaSheetsLocal.adicionar("salvar", limpeza);
+    return { erro: String(erro), filaLocal: true };
   }
 }
 
 async function atualizarLimpezaSheets(limpeza) {
   try {
-    await fetch(GOOGLE_SCRIPT_URL, {
+    const resp = await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
       mode: "cors",
       headers: {
@@ -744,8 +870,26 @@ async function atualizarLimpezaSheets(limpeza) {
         limpeza: limpeza
       })
     });
+
+    if (!resp.ok) {
+      const txt = await resp.text().catch(() => "<no-body>");
+      throw new Error(`Sheets update failed: ${resp.status} ${resp.statusText} - ${txt}`);
+    }
+
+    try {
+      const data = await resp.json();
+      if (data && data.sucesso === false) {
+        console.error("Sheets update retornou sucesso=false:", data);
+        throw new Error(data.erro || "Falha desconhecida");
+      }
+      return data;
+    } catch (e) {
+      return null;
+    }
   } catch (erro) {
-    console.error("Erro ao atualizar no Sheets:", erro);
+    console.error("Erro ao atualizar no Sheets (adicionando à fila):", erro);
+    filaSheetsLocal.adicionar("atualizar", limpeza);
+    return { erro: String(erro), filaLocal: true };
   }
 }
 
@@ -856,7 +1000,7 @@ importBtn.addEventListener("click", () => {
   reader.readAsText(arquivo, "UTF-8");
 });
 
-function processarCSV(csv) {
+async function processarCSV(csv) {
   const linhas = csv
     .split("\n")
     .map((linha) => linha.trim())
@@ -880,9 +1024,11 @@ function processarCSV(csv) {
     reservas.push(reserva);
   }
 
+  console.log("CSV headers:", cabecalho);
   const reservasValidas = reservas.filter((reserva) => {
     return reserva["Type/Transaction type"] === "Reservation";
   });
+  console.log("Reservas válidas (booking):", reservasValidas.length);
 
   const hoje = hojeISO();
 
@@ -890,7 +1036,10 @@ function processarCSV(csv) {
   let ignoradasHistorico = 0;
   let ignoradasDuplicadas = 0;
 
-  reservasValidas.forEach((reserva, index) => {
+  let salvoFalhas = 0;
+  const detalhesFalhas = [];
+  for (let index = 0; index < reservasValidas.length; index++) {
+    const reserva = reservasValidas[index];
     const checkout = reserva["Check-out date"];
     const referencia = reserva["Reference number"];
     const nomeImovel = reserva["Property name"];
@@ -898,7 +1047,7 @@ function processarCSV(csv) {
 
     if (!checkout || checkout < hoje) {
       ignoradasHistorico++;
-      return;
+      continue;
     }
 
     const jaExiste = limpezas.some((limpeza) => {
@@ -907,7 +1056,7 @@ function processarCSV(csv) {
 
     if (jaExiste) {
       ignoradasDuplicadas++;
-      return;
+      continue;
     }
 
     const novaLimpeza = {
@@ -931,9 +1080,18 @@ faxineira: dadosImovel?.faxineira || "Aniele",
     };
 
       limpezas.push(novaLimpeza);
-      salvarLimpezaSheets(novaLimpeza);
-      criadas++;
-  });
+      const result = await salvarLimpezaSheets(novaLimpeza).catch((e) => {
+        console.error("Falha ao salvar limpeza automática (booking):", e);
+        return { erro: String(e) };
+      });
+
+      if (result && result.erro) {
+        salvoFalhas++;
+        detalhesFalhas.push(`Booking ${novaLimpeza.referenciaReserva || novaLimpeza.id}: ${result.erro}`);
+      }
+
+        criadas++;
+      }
 
   renderizarCards();
 
@@ -941,8 +1099,14 @@ faxineira: dadosImovel?.faxineira || "Aniele",
     `Importação concluída!\n\n` +
     `Criadas: ${criadas}\n` +
     `Ignoradas por histórico: ${ignoradasHistorico}\n` +
-    `Ignoradas por duplicidade: ${ignoradasDuplicadas}`
+    `Ignoradas por duplicidade: ${ignoradasDuplicadas}\n` +
+    `Falhas ao salvar no Sheets: ${salvoFalhas}\n` +
+    `${salvoFalhas ? 'Ver console para detalhes.' : ''}`
   );
+
+  if (detalhesFalhas.length) {
+    console.error("Detalhes das falhas (booking):", detalhesFalhas);
+  }
 }
 
 /* IMPORTAR AIRBNB */
@@ -975,7 +1139,7 @@ importAirbnbBtn.addEventListener("click", () => {
   );
 });
 
-function processarAirbnbCSV(csv) {
+async function processarAirbnbCSV(csv) {
 
   const linhas = csv
     .split("\n")
@@ -1002,9 +1166,11 @@ function processarAirbnbCSV(csv) {
     reservas.push(reserva);
   }
 
+  console.log("CSV headers (Airbnb):", cabecalho);
   const reservasValidas = reservas.filter((reserva) => {
     return reserva["Tipo"] === "Reserva";
   });
+  console.log("Reservas válidas (airbnb):", reservasValidas.length);
 
   const hoje = hojeISO();
 
@@ -1012,7 +1178,10 @@ function processarAirbnbCSV(csv) {
   let ignoradasHistorico = 0;
   let ignoradasDuplicadas = 0;
 
-  reservasValidas.forEach((reserva, index) => {
+  let salvoFalhas = 0;
+  const detalhesFalhas = [];
+  for (let index = 0; index < reservasValidas.length; index++) {
+    const reserva = reservasValidas[index];
 
     const checkout =
       converterDataAirbnb(
@@ -1029,10 +1198,8 @@ function processarAirbnbCSV(csv) {
       mapaImoveisAirbnb[anuncio];  
 
     if (!checkout || checkout < hoje) {
-
       ignoradasHistorico++;
-
-      return;
+      continue;
     }
 
     const jaExiste =
@@ -1045,10 +1212,8 @@ function processarAirbnbCSV(csv) {
       });
 
     if (jaExiste) {
-
       ignoradasDuplicadas++;
-
-      return;
+      continue;
     }
 
     const novaLimpeza = {
@@ -1086,11 +1251,20 @@ function processarAirbnbCSV(csv) {
 
       limpezas.push(novaLimpeza);
 
-      salvarLimpezaSheets(novaLimpeza);
+
+      const result = await salvarLimpezaSheets(novaLimpeza).catch((e) => {
+        console.error("Falha ao salvar limpeza automática (airbnb):", e);
+        return { erro: String(e) };
+      });
+
+      if (result && result.erro) {
+        salvoFalhas++;
+        detalhesFalhas.push(`Airbnb ${novaLimpeza.referenciaReserva || novaLimpeza.id}: ${result.erro}`);
+      }
 
       criadas++;
 
-  });
+  }
 
   renderizarCards();
 
@@ -1098,8 +1272,14 @@ function processarAirbnbCSV(csv) {
     `Importação Airbnb concluída!\n\n` +
     `Criadas: ${criadas}\n` +
     `Histórico ignorado: ${ignoradasHistorico}\n` +
-    `Duplicadas ignoradas: ${ignoradasDuplicadas}`
+    `Duplicadas ignoradas: ${ignoradasDuplicadas}\n` +
+    `Falhas ao salvar no Sheets: ${salvoFalhas}\n` +
+    `${salvoFalhas ? 'Ver console para detalhes.' : ''}`
   );
+
+  if (detalhesFalhas.length) {
+    console.error("Detalhes das falhas (airbnb):", detalhesFalhas);
+  }
 }
 
 function converterDataAirbnb(data) {
