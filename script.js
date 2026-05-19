@@ -717,7 +717,7 @@ async function salvarLimpezaSheets(limpeza) {
   try {
     await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
-      mode: "no-cors",
+      mode: "cors",
       headers: {
         "Content-Type": "application/json"
       },
@@ -735,7 +735,7 @@ async function atualizarLimpezaSheets(limpeza) {
   try {
     await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
-      mode: "no-cors",
+      mode: "cors",
       headers: {
         "Content-Type": "application/json"
       },
@@ -930,8 +930,9 @@ faxineira: dadosImovel?.faxineira || "Aniele",
       criadoEm: new Date().toISOString()
     };
 
-    salvarLimpezaSheets(novaLimpeza);
-    criadas++;
+      limpezas.push(novaLimpeza);
+      salvarLimpezaSheets(novaLimpeza);
+      criadas++;
   });
 
   renderizarCards();
@@ -1083,9 +1084,12 @@ function processarAirbnbCSV(csv) {
         new Date().toISOString()
     };
 
-    limpezas.push(novaLimpeza);
+      limpezas.push(novaLimpeza);
 
-    criadas++;
+      salvarLimpezaSheets(novaLimpeza);
+
+      criadas++;
+
   });
 
   renderizarCards();
