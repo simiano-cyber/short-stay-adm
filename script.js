@@ -57,7 +57,8 @@ let contadorLimpezas = 1;
 let periodoAtual = "today";
 
 const GOOGLE_SCRIPT_URL =
-  "https://script.google.com/macros/s/AKfycbzqR8YRqJML3xsou7hnzyABtAZy53oBx8dyjruoc8a0xtzR9x0jRW4QDpvbvY_YCHGT/exec";
+  "https://script.google.com/macros/s/AKfycbxkZNOZfktp81cqnIChafBbeP-XVLHqpdncrpoiBBvu10kxp9vG68Bi6bm2KW2z3mDf/exec";
+
 
   const mapaImoveisAirbnb = {
   "Stúdio em Perdizes para 5 pessoas próx ao Allianz": {
@@ -1092,9 +1093,59 @@ function converterDataAirbnb(data) {
 
 window.addEventListener("load", () => {
   carregarLocalStorage();
+  carregarLimpezasSheets();
 
   filterData.value = hojeISO();
   periodoAtual = "today";
 
   renderizarCards();
 });
+
+async function carregarLimpezasSheets() {
+
+  try {
+
+    const resposta = await fetch(
+      `${GOOGLE_SCRIPT_URL}?action=listar`
+    );
+
+    const dados = await resposta.json();
+
+    if (!dados.sucesso) return;
+
+    limpezas = dados.limpezas.map((item) => ({
+
+      ...item,
+
+      qtdHospedes:
+        Number(item.qtdHospedes) || 0,
+
+      lavagem:
+        Number(item.lavagem) || 0,
+
+      secagem:
+        Number(item.secagem) || 0,
+
+      insumos:
+        item.insumos
+          ? String(item.insumos)
+              .split(",")
+              .map(i => i.trim())
+          : []
+
+    }));
+
+    salvarLocalStorage();
+
+    renderizarCards();
+
+  } catch (erro) {
+
+    console.error(
+      "Erro ao carregar Sheets:",
+      erro
+    );
+
+  }
+
+}
