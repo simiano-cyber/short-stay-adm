@@ -1,0 +1,109 @@
+19/05
+Mapeamento dos imóveis, hóspedes automáticos, faxineira padrão, badge Booking/Airbnb, KPIs e upload melhorado.
+
+20/05
+Organizar Google Sheets como base oficial:
+Limpezas, Reservas Importadas, Imóveis, Faxineiras e Configurações.
+
+21/05
+Conectar melhor o sistema com o Sheets:
+salvar limpezas, reservas importadas, status e histórico.
+
+22/05
+UX mobile:
+cards, filtros, agrupamento por dia, uso pelas faxineiras.
+
+23/05
+Publicação V1:
+GitHub Pages, teste no celular, correções e checklist.
+
+24/05
+Teste controlado com Ricardo/faxineiras.
+
+25/05
+Ajustes finais para iniciar uso real.
+
+Banco/API fica para a V2, depois que a operação estiver validada.
+
+
+script hoje
+
+PROJETO: SHORT STAY ADM
+
+STATUS ATUAL:
+Sistema operacional V1 funcionando em HTML + CSS + JS.
+
+FUNCIONALIDADES IMPLEMENTADAS:
+
+* Cards de limpeza
+* Criação manual de limpeza
+* Modal de conclusão
+* Concluídos separados
+* Persistência LocalStorage
+* Envio para Google Sheets
+* Importação Booking CSV
+* Importação Airbnb CSV
+* Higienização de histórico
+* Controle de duplicidade
+* Filtros rápidos
+* Layout responsivo
+* Melhorias visuais operacionais
+
+IMPORTAÇÃO BOOKING:
+
+* Apenas Reservation
+* Ignora histórico antigo
+* Evita duplicidade
+* Cria cards automáticos
+
+IMPORTAÇÃO AIRBNB:
+
+* Apenas Tipo = Reserva
+* Converte data corretamente
+* Ignora histórico
+* Evita duplicidade
+* Cria cards automáticos
+
+DECISÃO ARQUITETURAL:
+
+* NÃO migrar para banco agora
+* Continuar usando Google Sheets
+* Estruturar Sheets como se fosse banco
+
+ESTRUTURA FUTURA DO SHEETS:
+
+* Imóveis
+* Reservas
+* Limpezas
+* Fluxo de Caixa
+* DRE
+* Proprietários
+
+PRÓXIMO PASSO (19/05):
+
+* Mapeamento dos imóveis
+* Quantidade hóspedes automática
+* Faxineira padrão por imóvel
+* Badge Booking/Airbnb
+* KPI operacional
+* Drag and drop upload
+
+TECNOLOGIA:
+Frontend puro:
+
+* HTML
+* CSS
+* JavaScript
+
+Sem framework no momento.
+
+OBJETIVO:
+Validar operação real primeiro antes de migrar para:
+
+* Supabase
+* Firebase
+* API
+* Banco definitivo
+
+FOCO ATUAL:
+Operação simples, funcional e utilizável no celular pelas faxineiras.
