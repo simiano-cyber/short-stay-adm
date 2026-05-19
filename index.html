@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Short Stay ADM</title>
+  <link rel="icon" type="image/png" href="assets/img/Logo_trans_reduzido.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="container">
+
+    <aside class="sidebar">
+      <div class="logo">
+        <img src="assets/img/logo_shortstay_cortado.png" alt="Short Stay ADM" class="logo-full">
+      </div>
+
+      <nav>
+        <ul>
+         <li class="menu-group open" id="operacaoMenu">
+  <div class="menu-group-title">
+    <span>Operação</span>
+    <span class="menu-arrow">▼</span>
+  </div>
+
+  <ul class="submenu">
+    <li class="menu-item active" data-page="ativasPage">
+      Ativas
+    </li>
+
+    <li class="menu-item" data-page="concluidasPage">
+      Concluídas
+    </li>
+
+    <li class="menu-item" data-page="canceladasPage">
+      Canceladas
+    </li>
+  </ul>
+</li>
+</li>
+          <li class="menu-item" data-page="adminPage">
+            Gestão
+          </li>
+          <li>Apartamentos</li>
+          <li>Financeiro</li>
+          <li>Relatórios</li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main class="content">
+
+      <!-- OPERAÇÃO / ATIVAS -->
+      <section class="page active-page" id="ativasPage">
+        <div class="header">
+          <h1>Operação - Ativas</h1>
+          <p>Painel operacional das limpezas pendentes.</p>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card"><span class="kpi-label">Pendentes</span><h2 id="kpiPendentes">0</h2></div>
+          <div class="kpi-card"><span class="kpi-label">Hoje</span><h2 id="kpiHoje">0</h2></div>
+          <div class="kpi-card"><span class="kpi-label">Vencidas</span><h2 id="kpiVencidas">0</h2></div>
+          <div class="kpi-card"><span class="kpi-label">Concluídas</span><h2 id="kpiConcluidas">0</h2></div>
+        </div>
+
+        <div class="filters-container">
+          <div class="quick-filters">
+            <button class="quick-filter active-quick" data-period="today">Hoje</button>
+            <button class="quick-filter" data-period="tomorrow">Amanhã</button>
+            <button class="quick-filter" data-period="week">Semana</button>
+            <button class="quick-filter" data-period="month">Mês</button>
+            <button class="quick-filter" data-period="all">Todos</button>
+          </div>
+
+          <select id="filterResponsavel">
+            <option value="">Todas as Faxineiras</option>
+            <option value="Aniele">Aniele</option>
+            <option value="Thais">Thais</option>
+          </select>
+
+          <input type="date" id="filterData">
+
+          <select id="filterPredio">
+            <option value="">Todos os Prédios</option>
+            <option value="Nex One Moema">Nex One Moema</option>
+            <option value="Essential Perdizes">Essential Perdizes</option>
+            <option value="Smart Bourbon">Smart Bourbon</option>
+            <option value="Movi Campo Belo">Movi Campo Belo</option>
+            <option value="Level">Level</option>
+            <option value="Viva Benx">Viva Benx</option>
+            <option value="Bracon Perdizes">Bracon Perdizes</option>
+            <option value="Haus Mitre">Haus Mitre</option>
+          </select>
+
+          <button class="clear-filters-btn">Limpar</button>
+        </div>
+
+        <section class="cards" id="cardsContainer"></section>
+      </section>
+
+      <!-- OPERAÇÃO / CONCLUÍDAS -->
+      <section class="page" id="concluidasPage">
+        <div class="header">
+          <h1>Operação - Concluídas</h1>
+          <p>Histórico operacional das limpezas finalizadas.</p>
+        </div>
+        <section class="cards" id="completedCardsContainer"></section>
+      </section>
+
+      <!-- OPERAÇÃO / CANCELADAS -->
+      <section class="page" id="canceladasPage">
+        <div class="header">
+          <h1>Operação - Canceladas</h1>
+          <p>Limpezas canceladas para rastreabilidade operacional.</p>
+        </div>
+        <section class="cards" id="canceledCardsContainer"></section>
+      </section>
+
+      <!-- ADMIN -->
+      <section class="page" id="adminPage">
+        <div class="header">
+          <h1>Administração</h1>
+          <p>Criação, importação e gestão das limpezas.</p>
+        </div>
+
+        <div class="admin-card">
+          <h3>Importação de Reservas</h3>
+          <p>Importe os relatórios CSV para gerar limpezas automaticamente.</p>
+
+          <div class="import-grid">
+            <div class="import-box">
+              <div class="import-icon">🏨</div>
+              <h4>Booking</h4>
+              <p>Upload do relatório CSV do Booking.</p>
+              <input type="file" id="csvFileInput" accept=".csv">
+              <button class="import-btn">Importar Booking</button>
+            </div>
+
+            <div class="import-box">
+              <div class="import-icon">🏠</div>
+              <h4>Airbnb</h4>
+              <p>Upload do relatório CSV do Airbnb.</p>
+              <input type="file" id="airbnbFileInput" accept=".csv">
+              <button class="import-airbnb-btn">Importar Airbnb</button>
+            </div>
+          </div>
+
+          <hr class="admin-separator">
+
+          <h3>Nova Limpeza Manual</h3>
+          <p>Use apenas para ajustes, encaixes ou limpezas extras.</p>
+          <button class="new-cleaning-btn">+ Nova Limpeza</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL NOVA LIMPEZA -->
+  <div class="modal" id="cleaningModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Nova Limpeza</h2>
+        <span class="close-modal">&times;</span>
+      </div>
+
+      <select id="predioSelect">
+        <option value="">Selecione o Prédio</option>
+        <option value="Nex One Moema">Nex One Moema</option>
+        <option value="Essential Perdizes">Essential Perdizes</option>
+        <option value="Smart Bourbon">Smart Bourbon</option>
+        <option value="Movi Campo Belo">Movi Campo Belo</option>
+        <option value="Level">Level</option>
+        <option value="Viva Benx">Viva Benx</option>
+        <option value="Bracon Perdizes">Bracon Perdizes</option>
+        <option value="Haus Mitre">Haus Mitre</option>
+      </select>
+
+      <select id="apartamentoSelect">
+        <option value="">Selecione o Apartamento</option>
+      </select>
+
+      <select id="faxineiraSelect">
+        <option value="">Selecione a Faxineira</option>
+        <option value="Aniele">Aniele</option>
+        <option value="Thais">Thais</option>
+      </select>
+
+      <select id="tipoFaxinaSelect">
+        <option value="">Tipo de Faxina</option>
+        <option value="Troca de hóspede">Troca de hóspede</option>
+        <option value="Refinada">Refinada</option>
+      </select>
+
+      <input type="number" id="qtdHospedesInput" min="1" placeholder="Quantidade de hóspedes">
+      <input type="date" id="dataLimpeza">
+      <input type="time" id="horaLimpeza" value="12:00">
+      <button class="save-btn">Criar Limpeza</button>
+    </div>
+  </div>
+
+  <!-- MODAL DETALHES -->
+  <div class="modal" id="finishModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Finalizar Limpeza</h2>
+        <span class="close-finish-modal">&times;</span>
+      </div>
+
+      <div class="detail-header">
+        <h3 id="detailApartamento">Apartamento</h3>
+        <p id="detailInfos">Informações</p>
+      </div>
+
+      <div class="form-section">
+        <label>Lavagem</label>
+        <input type="number" id="lavagemInput" min="0" value="0">
+
+        <label>Secagem</label>
+        <input type="number" id="secagemInput" min="0" value="0">
+      </div>
+
+      <div class="form-section">
+        <label>Ocorrências</label>
+
+        <label class="checkbox-line">
+          <input type="checkbox" id="danoCheckbox">
+          Teve algo danificado?
+        </label>
+
+        <label class="checkbox-line">
+          <input type="checkbox" id="faltamInsumos">
+          Faltam insumos?
+        </label>
+
+        <div class="insumos-box" id="insumosBox">
+          <h4>Limpeza</h4>
+          <div class="insumos-grid">
+            <label><input type="checkbox" value="Detergente">Detergente</label>
+            <label><input type="checkbox" value="Esponja">Esponja</label>
+            <label><input type="checkbox" value="Cândida">Cândida</label>
+            <label><input type="checkbox" value="Desinfetante">Desinfetante</label>
+            <label><input type="checkbox" value="Removedor">Removedor</label>
+            <label><input type="checkbox" value="Limpa Vidro">Limpa Vidro</label>
+            <label><input type="checkbox" value="Bom Ar">Bom Ar</label>
+            <label><input type="checkbox" value="Veja">Veja</label>
+          </div>
+
+          <h4>Banheiro</h4>
+          <div class="insumos-grid">
+            <label><input type="checkbox" value="Sabonete">Sabonete</label>
+            <label><input type="checkbox" value="Shampoo">Shampoo</label>
+            <label><input type="checkbox" value="Papel Higiênico">Papel Higiênico</label>
+          </div>
+
+          <h4>Alimentos</h4>
+          <div class="insumos-grid">
+            <label><input type="checkbox" value="Café">Café</label>
+            <label><input type="checkbox" value="Açúcar">Açúcar</label>
+            <label><input type="checkbox" value="Adoçante">Adoçante</label>
+          </div>
+        </div>
+
+        <textarea id="observacoesInput" placeholder="Observações da limpeza"></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="cancel-cleaning-btn">Cancelar Limpeza</button>
+        <button class="finish-save-btn">Concluir Limpeza</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
