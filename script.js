@@ -709,11 +709,11 @@ finishSaveBtn.addEventListener("click", () => {
   finishModal.style.display = "none";
   cardAtual = null;
 
-  enviarParaSheets(limpeza);
+  atualizarLimpezaSheets(limpeza);
   renderizarCards();
 });
 
-async function enviarParaSheets(limpeza) {
+async function salvarLimpezaSheets(limpeza) {
   try {
     await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
@@ -721,12 +721,31 @@ async function enviarParaSheets(limpeza) {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(limpeza)
+      body: JSON.stringify({
+        action: "salvar",
+        limpeza: limpeza
+      })
     });
-
-    console.log("Enviado para Google Sheets");
   } catch (erro) {
-    console.error("Erro ao enviar:", erro);
+    console.error("Erro ao salvar no Sheets:", erro);
+  }
+}
+
+async function atualizarLimpezaSheets(limpeza) {
+  try {
+    await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        action: "atualizar",
+        limpeza: limpeza
+      })
+    });
+  } catch (erro) {
+    console.error("Erro ao atualizar no Sheets:", erro);
   }
 }
 
@@ -753,7 +772,7 @@ cancelCleaningBtn.addEventListener("click", () => {
   finishModal.style.display = "none";
   cardAtual = null;
 
-  enviarParaSheets(limpeza);
+  atualizarLimpezaSheets(limpeza);
   renderizarCards();
 });
 
@@ -911,7 +930,7 @@ faxineira: dadosImovel?.faxineira || "Aniele",
       criadoEm: new Date().toISOString()
     };
 
-    limpezas.push(novaLimpeza);
+    salvarLimpezaSheets(novaLimpeza);
     criadas++;
   });
 
