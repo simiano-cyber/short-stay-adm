@@ -539,11 +539,19 @@ button:hover {
     flex-direction: column;
   }
 
-  .filters-container select,
-  .filters-container input,
-  .clear-filters-btn {
-    width: 100%;
-  }
+.filters-container select,
+.filters-container input,
+.filters-container button,
+.clear-filters-btn {
+
+  width: 100%;
+
+  min-height: 52px;
+
+  padding: 14px;
+
+  border-radius: 14px;
+}
 
   .cards {
     flex-direction: column;

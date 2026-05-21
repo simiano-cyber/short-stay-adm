@@ -348,7 +348,14 @@ function amanhaISO() {
 
 function formatarData(data) {
   if (!data) return "";
-  return data.split("-").reverse().join("/");
+
+  const texto = String(data);
+
+  if (texto.includes("T")) {
+    return texto.split("T")[0].split("-").reverse().join("/");
+  }
+
+  return texto.split("-").reverse().join("/");
 }
 
 function preencherDataPadrao() {
