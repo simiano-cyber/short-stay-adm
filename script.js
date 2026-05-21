@@ -346,16 +346,45 @@ function amanhaISO() {
   return data.toISOString().split("T")[0];
 }
 
+function normalizarDataISO(data) {
+  if (!data) return "";
+
+  const texto = String(data).trim();
+
+  const isoMatch = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+  }
+
+  const partesBarra = texto.split("/");
+  if (partesBarra.length === 3) {
+    const [dia, mes, ano] = partesBarra;
+    if (ano.length === 4) {
+      return `${ano}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}`;
+    }
+    if (dia.length === 4) {
+      return `${dia}-${mes.padStart(2, "0")}-${ano.padStart(2, "0")}`;
+    }
+  }
+
+  const dataObj = new Date(texto);
+  if (!Number.isNaN(dataObj.getTime())) {
+    return dataObj.toISOString().split("T")[0];
+  }
+
+  return texto;
+}
+
 function formatarData(data) {
   if (!data) return "";
 
-  const texto = String(data);
-
-  if (texto.includes("T")) {
-    return texto.split("T")[0].split("-").reverse().join("/");
+  const dataISO = normalizarDataISO(data);
+  const match = dataISO.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    return `${match[3]}/${match[2]}/${match[1]}`;
   }
 
-  return texto.split("-").reverse().join("/");
+  return dataISO;
 }
 
 function preencherDataPadrao() {
@@ -1040,7 +1069,7 @@ async function processarCSV(csv) {
   const detalhesFalhas = [];
   for (let index = 0; index < reservasValidas.length; index++) {
     const reserva = reservasValidas[index];
-    const checkout = reserva["Check-out date"];
+    const checkout = normalizarDataISO(reserva["Check-out date"]);
     const referencia = reserva["Reference number"];
     const nomeImovel = reserva["Property name"];
     const dadosImovel = mapaImoveisBooking[nomeImovel];
@@ -1183,10 +1212,11 @@ async function processarAirbnbCSV(csv) {
   for (let index = 0; index < reservasValidas.length; index++) {
     const reserva = reservasValidas[index];
 
-    const checkout =
+    const checkout = normalizarDataISO(
       converterDataAirbnb(
         reserva["Data de término"]
-      );
+      )
+    );
 
     const referencia =
       reserva["Código de Confirmação"];
@@ -1283,12 +1313,15 @@ async function processarAirbnbCSV(csv) {
 }
 
 function converterDataAirbnb(data) {
-
   if (!data) return "";
 
-  const partes = data.split("/");
+  const partes = data.split("/").map((parte) => parte.trim());
+  if (partes.length !== 3) {
+    return normalizarDataISO(data);
+  }
 
-  return `${partes[2]}-${partes[0]}-${partes[1]}`;
+  const [dia, mes, ano] = partes;
+  return `${ano}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}`;
 }
 
 
