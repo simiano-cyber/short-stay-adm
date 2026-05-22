@@ -37,6 +37,12 @@ const filterPredio = document.getElementById("filterPredio");
 const clearFiltersBtn = document.querySelector(".clear-filters-btn");
 const quickFilters = document.querySelectorAll(".quick-filter");
 
+const feedbackModal = document.getElementById("feedbackModal");
+const feedbackIcon = document.getElementById("feedbackIcon");
+const feedbackTitle = document.getElementById("feedbackTitle");
+const feedbackMessage = document.getElementById("feedbackMessage");
+const feedbackOkBtn = document.getElementById("feedbackOkBtn");
+
 const csvFileInput = document.getElementById("csvFileInput");
 const importBtn = document.querySelector(".import-btn");
 const airbnbFileInput = document.getElementById("airbnbFileInput");
@@ -55,6 +61,43 @@ let cardAtual = null;
 let limpezas = [];
 let contadorLimpezas = 1;
 let periodoAtual = "today";
+
+function mostrarFeedback({ titulo, mensagem, tipo = "success" }) {
+  feedbackTitle.textContent = titulo;
+  feedbackMessage.innerHTML = mensagem;
+  feedbackIcon.textContent = tipo === "warning" ? "!" : "✓";
+  feedbackIcon.classList.toggle("warning", tipo === "warning");
+  feedbackModal.style.display = "flex";
+}
+
+function criarResumoImportacao({ criadas, ignoradasHistorico, ignoradasDuplicadas, salvoFalhas }) {
+  return `
+    <p>Processamento concluído.</p>
+    <div class="feedback-summary">
+      <div><span>Criadas</span><strong>${criadas}</strong></div>
+      <div><span>Ignoradas por histórico</span><strong>${ignoradasHistorico}</strong></div>
+      <div><span>Ignoradas por duplicidade</span><strong>${ignoradasDuplicadas}</strong></div>
+      <div><span>Falhas ao salvar no Sheets</span><strong>${salvoFalhas}</strong></div>
+    </div>
+  `;
+}
+
+function setBotaoProcessando(botao, processando, textoProcessando) {
+  if (!botao) return;
+
+  if (processando) {
+    botao.dataset.textoOriginal = botao.textContent;
+    botao.textContent = textoProcessando;
+    botao.disabled = true;
+    botao.classList.add("is-loading");
+    return;
+  }
+
+  botao.textContent = botao.dataset.textoOriginal || botao.textContent;
+  botao.disabled = false;
+  botao.classList.remove("is-loading");
+  delete botao.dataset.textoOriginal;
+}
 
 const GOOGLE_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbzgHwVU-ZEdKYrnpqPtOi9dtW_Vp8BZ1PKu6Ywj5AYlzRbLCu25VaZSLHpTB-8-sAhC/exec";
@@ -471,18 +514,48 @@ function dataAnteriorAHoje(data) {
   return dataNormalizada && dataNormalizada < hojeISO();
 }
 
+function extrairHoraMinuto(hora) {
+  if (!hora) {
+    return { horas: 12, minutos: 0 };
+  }
+
+  const texto = String(hora).trim();
+
+  if (texto.includes("T")) {
+    const data = new Date(texto);
+
+    if (!Number.isNaN(data.getTime())) {
+      return {
+        horas: data.getHours(),
+        minutos: data.getMinutes()
+      };
+    }
+  }
+
+  const partes = texto.match(/^(\d{1,2})(?::(\d{1,2}))?h?$/i);
+
+  if (partes) {
+    return {
+      horas: Number(partes[1]),
+      minutos: Number(partes[2] || 0)
+    };
+  }
+
+  return { horas: 12, minutos: 0 };
+}
+
+function formatarHora(hora) {
+  const { horas, minutos } = extrairHoraMinuto(hora);
+
+  return minutos === 0
+    ? `${horas}h`
+    : `${horas}h${String(minutos).padStart(2, "0")}`;
+}
+
 function normalizarHoraOrdenacao(hora) {
-  if (!hora) return "00:00";
+  const { horas, minutos } = extrairHoraMinuto(hora);
 
-  const texto = String(hora).trim().toLowerCase();
-  const partes = texto.match(/^(\d{1,2})(?::(\d{1,2}))?h?$/);
-
-  if (!partes) return "00:00";
-
-  const horas = partes[1].padStart(2, "0");
-  const minutos = (partes[2] || "00").padStart(2, "0");
-
-  return `${horas}:${minutos}`;
+  return `${String(horas).padStart(2, "0")}:${String(minutos).padStart(2, "0")}`;
 }
 
 function compararLimpezasPorDataHora(a, b) {
@@ -508,7 +581,8 @@ function carregarLocalStorage() {
   if (salvas) {
     limpezas = JSON.parse(salvas).map((limpeza) => ({
       ...limpeza,
-      data: normalizarDataSistema(limpeza.data, limpeza.origem)
+      data: normalizarDataSistema(limpeza.data, limpeza.origem),
+      hora: normalizarHora(limpeza.hora)
     }));
     contadorLimpezas = limpezas.length + 1;
   }
@@ -585,7 +659,7 @@ function criarCard(limpeza) {
   card.innerHTML = `
 <div class="card-top">
   <div class="card-date">
-    📅 ${formatarData(limpeza.data)}
+    📅 ${formatarData(limpeza.data)} -${formatarHora(limpeza.hora)}
   </div>
 
   <div class="origin-badge ${definirClasseOrigem(limpeza.origem)}">
@@ -599,16 +673,12 @@ function criarCard(limpeza) {
       </div>
 
       <div class="card-apto">
-        ${limpeza.apartamento}
+        ${limpeza.apartamento} • ${limpeza.qtdHospedes || 2} hósp.
       </div>
     </div>
 
     <div class="card-body">
       <div class="card-info">
-        <div class="card-time">
-          ${limpeza.hora}
-        </div>
-
         <div class="card-person">
           ${limpeza.faxineira}
         </div>
@@ -793,6 +863,10 @@ closeFinishModal.addEventListener("click", () => {
   finishModal.style.display = "none";
 });
 
+feedbackOkBtn.addEventListener("click", () => {
+  feedbackModal.style.display = "none";
+});
+
 /* APARTAMENTOS POR PRÉDIO */
 
 predioSelect.addEventListener("change", () => {
@@ -818,7 +892,7 @@ faltamInsumos.addEventListener("change", () => {
 
 /* CRIAR LIMPEZA MANUAL */
 
-saveBtn.addEventListener("click", () => {
+saveBtn.addEventListener("click", async () => {
   const predio = predioSelect.value;
   const apartamento = apartamentoSelect.value;
   const faxineira = faxineiraSelect.value;
@@ -828,7 +902,11 @@ saveBtn.addEventListener("click", () => {
   const hora = horaLimpeza.value;
 
   if (!predio || !apartamento || !faxineira || !tipoFaxina || !qtdHospedes || !data || !hora) {
-    alert("Preencha todos os campos.");
+    mostrarFeedback({
+      titulo: "Campos incompletos",
+      mensagem: "<p>Preencha todos os campos da limpeza manual antes de salvar.</p>",
+      tipo: "warning"
+    });
     return;
   }
 
@@ -849,10 +927,30 @@ saveBtn.addEventListener("click", () => {
   contadorLimpezas++;
   limpezas.push(novaLimpeza);
 
+  setBotaoProcessando(saveBtn, true, "Salvando...");
+
+  try {
+    await salvarLimpezaSheets(novaLimpeza);
+  } finally {
+    setBotaoProcessando(saveBtn, false);
+  }
+
   renderizarCards();
 
   cleaningModal.style.display = "none";
   limparFormulario();
+
+  mostrarFeedback({
+    titulo: "Limpeza manual criada",
+    mensagem: `
+      <p>A limpeza foi criada e enviada para o Sheets.</p>
+      <div class="feedback-summary">
+        <div><span>Origem</span><strong>Manual</strong></div>
+        <div><span>Data</span><strong>${formatarData(novaLimpeza.data)}</strong></div>
+        <div><span>Horário</span><strong>${novaLimpeza.hora}</strong></div>
+      </div>
+    `
+  });
 });
 
 /* ABRIR MODAL DE CONCLUSÃO */
@@ -1074,15 +1172,35 @@ importBtn.addEventListener("click", () => {
   const arquivo = csvFileInput.files[0];
 
   if (!arquivo) {
-    alert("Selecione um CSV.");
+    mostrarFeedback({
+      titulo: "Arquivo não selecionado",
+      mensagem: "<p>Selecione um arquivo CSV do Booking para continuar.</p>",
+      tipo: "warning"
+    });
     return;
   }
 
+  setBotaoProcessando(importBtn, true, "Importando...");
+
   const reader = new FileReader();
 
-  reader.onload = function (event) {
+  reader.onload = async function (event) {
     const csv = event.target.result;
-    processarCSV(csv);
+
+    try {
+      await processarCSV(csv);
+    } finally {
+      setBotaoProcessando(importBtn, false);
+    }
+  };
+
+  reader.onerror = function () {
+    setBotaoProcessando(importBtn, false);
+    mostrarFeedback({
+      titulo: "Erro na leitura",
+      mensagem: "<p>Não foi possível ler o arquivo selecionado. Tente novamente.</p>",
+      tipo: "warning"
+    });
   };
 
   reader.readAsText(arquivo, "UTF-8");
@@ -1183,14 +1301,16 @@ faxineira: dadosImovel?.faxineira || "Aniele",
 
   renderizarCards();
 
-  alert(
-    `Importação concluída!\n\n` +
-    `Criadas: ${criadas}\n` +
-    `Ignoradas por histórico: ${ignoradasHistorico}\n` +
-    `Ignoradas por duplicidade: ${ignoradasDuplicadas}\n` +
-    `Falhas ao salvar no Sheets: ${salvoFalhas}\n` +
-    `${salvoFalhas ? 'Ver console para detalhes.' : ''}`
-  );
+  mostrarFeedback({
+    titulo: "Importação Booking concluída",
+    mensagem: criarResumoImportacao({
+      criadas,
+      ignoradasHistorico,
+      ignoradasDuplicadas,
+      salvoFalhas
+    }),
+    tipo: salvoFalhas ? "warning" : "success"
+  });
 
   if (detalhesFalhas.length) {
     console.error("Detalhes das falhas (booking):", detalhesFalhas);
@@ -1206,19 +1326,38 @@ importAirbnbBtn.addEventListener("click", () => {
 
   if (!arquivo) {
 
-    alert("Selecione um CSV Airbnb.");
+    mostrarFeedback({
+      titulo: "Arquivo não selecionado",
+      mensagem: "<p>Selecione um arquivo CSV do Airbnb para continuar.</p>",
+      tipo: "warning"
+    });
 
     return;
   }
 
+  setBotaoProcessando(importAirbnbBtn, true, "Importando...");
+
   const reader = new FileReader();
 
-  reader.onload = function(event) {
+  reader.onload = async function(event) {
 
     const csv =
       event.target.result;
 
-    processarAirbnbCSV(csv);
+    try {
+      await processarAirbnbCSV(csv);
+    } finally {
+      setBotaoProcessando(importAirbnbBtn, false);
+    }
+  };
+
+  reader.onerror = function() {
+    setBotaoProcessando(importAirbnbBtn, false);
+    mostrarFeedback({
+      titulo: "Erro na leitura",
+      mensagem: "<p>Não foi possível ler o arquivo selecionado. Tente novamente.</p>",
+      tipo: "warning"
+    });
   };
 
   reader.readAsText(
@@ -1271,11 +1410,10 @@ async function processarAirbnbCSV(csv) {
   for (let index = 0; index < reservasValidas.length; index++) {
     const reserva = reservasValidas[index];
 
-    const checkout =
-      normalizarDataSistema(
-        reserva["Data de término"],
-        "airbnb"
-      );
+    const checkout = normalizarDataSistema(
+      reserva["Data de término"],
+      "airbnb"
+    );
 
     const referencia =
       reserva["Código de Confirmação"];
@@ -1357,18 +1495,38 @@ async function processarAirbnbCSV(csv) {
 
   renderizarCards();
 
-  alert(
-    `Importação Airbnb concluída!\n\n` +
-    `Criadas: ${criadas}\n` +
-    `Histórico ignorado: ${ignoradasHistorico}\n` +
-    `Duplicadas ignoradas: ${ignoradasDuplicadas}\n` +
-    `Falhas ao salvar no Sheets: ${salvoFalhas}\n` +
-    `${salvoFalhas ? 'Ver console para detalhes.' : ''}`
-  );
+  mostrarFeedback({
+    titulo: "Importação Airbnb concluída",
+    mensagem: criarResumoImportacao({
+      criadas,
+      ignoradasHistorico,
+      ignoradasDuplicadas,
+      salvoFalhas
+    }),
+    tipo: salvoFalhas ? "warning" : "success"
+  });
 
   if (detalhesFalhas.length) {
     console.error("Detalhes das falhas (airbnb):", detalhesFalhas);
   }
+}
+
+function normalizarHora(hora) {
+  if (!hora) return "12:00";
+
+  const texto = String(hora).trim();
+
+  const match = texto.match(/^(\d{1,2}):(\d{2})$/);
+  if (match) {
+    return `${match[1].padStart(2, "0")}:${match[2]}`;
+  }
+
+  const horaNum = parseInt(texto);
+  if (!Number.isNaN(horaNum) && horaNum >= 0 && horaNum < 24) {
+    return `${String(horaNum).padStart(2, "0")}:00`;
+  }
+
+  return "12:00";
 }
 
 /* INICIAR SISTEMA */
