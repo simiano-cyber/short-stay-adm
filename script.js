@@ -363,7 +363,7 @@ function normalizarDataISO(data) {
     return texto;
   }
 
-  const partesBR = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  const partesBR = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
 
   if (partesBR) {
     const dia = partesBR[1].padStart(2, "0");
@@ -448,6 +448,19 @@ function correspondeAoPeriodo(dataISO, periodo) {
   return true;
 }
 
+function mesmaData(dataA, dataB) {
+  const dataNormalizadaA = normalizarDataISO(dataA);
+  const dataNormalizadaB = normalizarDataISO(dataB);
+
+  return dataNormalizadaA && dataNormalizadaA === dataNormalizadaB;
+}
+
+function dataAnteriorAHoje(data) {
+  const dataNormalizada = normalizarDataISO(data);
+
+  return dataNormalizada && dataNormalizada < hojeISO();
+}
+
 function timestampLimpeza(limpeza) {
   const dataISO = normalizarDataISO(limpeza.data);
   const hora = limpeza.hora || "00:00";
@@ -479,13 +492,11 @@ function limparFormulario() {
 }
 
  function definirClassePrazo(dataLimpezaCard) {
-  const hoje = hojeISO();
-
-  if (dataLimpezaCard < hoje) {
+  if (dataAnteriorAHoje(dataLimpezaCard)) {
     return "status-vencido";
   }
 
-  if (dataLimpezaCard === hoje) {
+  if (mesmaData(dataLimpezaCard, hojeISO())) {
     return "status-hoje";
   }
 
@@ -493,13 +504,11 @@ function limparFormulario() {
 }
 
 function definirTextoPrazo(dataLimpezaCard) {
-  const hoje = hojeISO();
-
-  if (dataLimpezaCard < hoje) {
+  if (dataAnteriorAHoje(dataLimpezaCard)) {
     return "Vencido";
   }
 
-  if (dataLimpezaCard === hoje) {
+  if (mesmaData(dataLimpezaCard, hojeISO())) {
     return "Hoje";
   }
 
@@ -626,7 +635,7 @@ function atualizarKPIs() {
 
   if (data) {
     cardsFiltrados = cardsFiltrados.filter((limpeza) => {
-      return limpeza.data === data;
+      return mesmaData(limpeza.data, data);
     });
   }
 
@@ -650,14 +659,14 @@ const pendentes = cardsFiltrados.filter((limpeza) => {
 });
 
   const hojeCards = cardsFiltrados.filter((limpeza) => {
-    return limpeza.data === hoje;
+    return mesmaData(limpeza.data, hoje);
   });
 
 const vencidas = cardsFiltrados.filter((limpeza) => {
   return (
     limpeza.status !== "concluido" &&
     limpeza.status !== "cancelado" &&
-    limpeza.data < hoje
+    dataAnteriorAHoje(limpeza.data)
   );
   });
 
@@ -689,7 +698,7 @@ function aplicarFiltros() {
       mostrar = false;
     }
 
-    if (data && data !== cardData) {
+    if (data && !mesmaData(cardData, data)) {
       mostrar = false;
     }
 
