@@ -595,6 +595,19 @@ function atualizarKPIs() {
     });
   }
 
+  if (periodoAtual === "today") {
+    cardsFiltrados = cardsFiltrados.filter((limpeza) => {
+      return limpeza.data === hoje;
+    });
+  }
+
+  if (periodoAtual === "tomorrow") {
+    const amanha = amanhaISO();
+    cardsFiltrados = cardsFiltrados.filter((limpeza) => {
+      return limpeza.data === amanha;
+    });
+  }
+
   if (periodoAtual === "week") {
     cardsFiltrados = cardsFiltrados.filter((limpeza) => {
       return estaNaSemana(limpeza.data);
@@ -639,11 +652,13 @@ const vencidas = cardsFiltrados.filter((limpeza) => {
 function aplicarFiltros() {
   const cards = document.querySelectorAll("#cardsContainer .card");
 
+  const hoje = hojeISO();
   const responsavel = filterResponsavel.value;
   const predio = filterPredio.value;
 
   cards.forEach((card) => {
     const cardResponsavel = card.dataset.responsavel;
+    const cardData = card.dataset.data;
     const cardPredio = card.dataset.predio;
 
     let mostrar = true;
@@ -653,6 +668,14 @@ function aplicarFiltros() {
     }
 
     if (predio && predio !== cardPredio) {
+      mostrar = false;
+    }
+
+    if (periodoAtual === "today" && cardData !== hoje) {
+      mostrar = false;
+    }
+
+    if (periodoAtual === "tomorrow" && cardData !== amanhaISO()) {
       mostrar = false;
     }
 
@@ -959,8 +982,6 @@ clearFiltersBtn.addEventListener("click", () => {
 
 function aplicarFiltroRapido(periodo) {
   periodoAtual = periodo;
-
-
 
   aplicarFiltros();
 }
