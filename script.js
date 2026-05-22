@@ -624,7 +624,7 @@ function atualizarKPIs() {
   let cardsFiltrados = [...limpezas];
 
   const responsavel = filterResponsavel.value;
-  const data = filterData.value;
+  const data = filterData ? filterData.value : "";
   const predio = filterPredio.value;
 
   if (responsavel) {
@@ -684,7 +684,7 @@ function aplicarFiltros() {
   const cards = document.querySelectorAll("#cardsContainer .card");
 
   const responsavel = filterResponsavel.value;
-  const data = filterData.value;
+  const data = filterData ? filterData.value : "";
   const predio = filterPredio.value;
 
   cards.forEach((card) => {
@@ -989,15 +989,17 @@ cancelCleaningBtn.addEventListener("click", () => {
 filterResponsavel.addEventListener("change", aplicarFiltros);
 filterPredio.addEventListener("change", aplicarFiltros);
 
-filterData.addEventListener("change", () => {
-  periodoAtual = "custom";
+if (filterData) {
+  filterData.addEventListener("change", () => {
+    periodoAtual = "custom";
 
-  quickFilters.forEach((btn) => {
-    btn.classList.remove("active-quick");
+    quickFilters.forEach((btn) => {
+      btn.classList.remove("active-quick");
+    });
+
+    aplicarFiltros();
   });
-
-  aplicarFiltros();
-});
+}
 
 clearFiltersBtn.addEventListener("click", () => {
   filterResponsavel.value = "";
@@ -1017,15 +1019,7 @@ clearFiltersBtn.addEventListener("click", () => {
 function aplicarFiltroRapido(periodo) {
   periodoAtual = periodo;
 
-  if (periodo === "today") {
-    filterData.value = hojeISO();
-  }
-
-  if (periodo === "tomorrow") {
-    filterData.value = amanhaISO();
-  }
-
-  if (periodo === "week" || periodo === "month" || periodo === "all") {
+  if (filterData) {
     filterData.value = "";
   }
 
