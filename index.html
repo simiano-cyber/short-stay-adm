@@ -22,7 +22,7 @@
 
       <nav>
         <ul>
-         <li class="menu-group open" id="operacaoMenu">
+         <li class="menu-group open active-group" id="operacaoMenu">
   <div class="menu-group-title">
     <span>Operação</span>
     <span class="menu-arrow">▼</span>
@@ -108,6 +108,34 @@
           <h1>Operação - Concluídas</h1>
           <p>Histórico operacional das limpezas finalizadas.</p>
         </div>
+        <div class="filters-container history-filters" data-history="concluidas">
+          <div class="quick-filters">
+            <button class="history-quick-filter active-quick" data-history-filter="concluidas" data-period="today">Hoje</button>
+            <button class="history-quick-filter" data-history-filter="concluidas" data-period="7d">7d</button>
+            <button class="history-quick-filter" data-history-filter="concluidas" data-period="current">Atual</button>
+            <button class="history-quick-filter" data-history-filter="concluidas" data-period="previous">Ant</button>
+            <button class="history-quick-filter" data-history-filter="concluidas" data-period="all">Todos</button>
+          </div>
+
+          <select id="filterConcluidasResponsavel">
+            <option value="">Todas as Faxineiras</option>
+            <option value="Aniele">Aniele</option>
+            <option value="Thais">Thais</option>
+          </select>
+
+          <select id="filterConcluidasPredio">
+            <option value="">Todos os Prédios</option>
+            <option value="Nex One Moema">Nex One Moema</option>
+            <option value="Essential Perdizes">Essential Perdizes</option>
+            <option value="Smart Bourbon">Smart Bourbon</option>
+            <option value="Movi Campo Belo">Movi Campo Belo</option>
+            <option value="Level">Level</option>
+            <option value="Viva Benx">Viva Benx</option>
+            <option value="Bracon Perdizes">Bracon Perdizes</option>
+            <option value="Haus Mitre">Haus Mitre</option>
+          </select>
+        </div>
+
         <section class="cards" id="completedCardsContainer"></section>
       </section>
 
@@ -117,6 +145,34 @@
           <h1>Operação - Canceladas</h1>
           <p>Limpezas canceladas para rastreabilidade operacional.</p>
         </div>
+        <div class="filters-container history-filters" data-history="canceladas">
+          <div class="quick-filters">
+            <button class="history-quick-filter active-quick" data-history-filter="canceladas" data-period="today">Hoje</button>
+            <button class="history-quick-filter" data-history-filter="canceladas" data-period="7d">7d</button>
+            <button class="history-quick-filter" data-history-filter="canceladas" data-period="current">Atual</button>
+            <button class="history-quick-filter" data-history-filter="canceladas" data-period="previous">Ant</button>
+            <button class="history-quick-filter" data-history-filter="canceladas" data-period="all">Todos</button>
+          </div>
+
+          <select id="filterCanceladasResponsavel">
+            <option value="">Todas as Faxineiras</option>
+            <option value="Aniele">Aniele</option>
+            <option value="Thais">Thais</option>
+          </select>
+
+          <select id="filterCanceladasPredio">
+            <option value="">Todos os Prédios</option>
+            <option value="Nex One Moema">Nex One Moema</option>
+            <option value="Essential Perdizes">Essential Perdizes</option>
+            <option value="Smart Bourbon">Smart Bourbon</option>
+            <option value="Movi Campo Belo">Movi Campo Belo</option>
+            <option value="Level">Level</option>
+            <option value="Viva Benx">Viva Benx</option>
+            <option value="Bracon Perdizes">Bracon Perdizes</option>
+            <option value="Haus Mitre">Haus Mitre</option>
+          </select>
+        </div>
+
         <section class="cards" id="canceledCardsContainer"></section>
       </section>
 
