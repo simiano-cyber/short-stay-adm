@@ -425,7 +425,10 @@ function carregarLocalStorage() {
   const salvas = localStorage.getItem("limpezas");
 
   if (salvas) {
-    limpezas = JSON.parse(salvas);
+    limpezas = JSON.parse(salvas).map((item) => ({
+      ...item,
+      hora: normalizarHora(item.hora)
+    }));
     contadorLimpezas = limpezas.length + 1;
   }
 }
@@ -1324,6 +1327,24 @@ function converterDataAirbnb(data) {
   return `${ano}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}`;
 }
 
+function normalizarHora(hora) {
+  if (!hora) return "12:00";
+
+  const texto = String(hora).trim();
+
+  const match = texto.match(/^(\d{1,2}):(\d{2})$/);
+  if (match) {
+    return `${match[1].padStart(2, "0")}:${match[2]}`;
+  }
+
+  const horaNum = parseInt(texto);
+  if (!Number.isNaN(horaNum) && horaNum >= 0 && horaNum < 24) {
+    return `${String(horaNum).padStart(2, "0")}:00`;
+  }
+
+  return "12:00";
+}
+
 
 /* INICIAR SISTEMA */
 
@@ -1361,6 +1382,8 @@ async function carregarLimpezasSheets() {
 
       secagem:
         Number(item.secagem) || 0,
+
+      hora: normalizarHora(item.hora),
 
       insumos:
         item.insumos
