@@ -336,14 +336,22 @@ const apartamentosPorPredio = {
   "Haus Mitre": ["apto 709"]
 };
 
+function dataLocalISO(data) {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
 function hojeISO() {
-  return new Date().toISOString().split("T")[0];
+  return dataLocalISO(new Date());
 }
 
 function amanhaISO() {
   const data = new Date();
   data.setDate(data.getDate() + 1);
-  return data.toISOString().split("T")[0];
+  return dataLocalISO(data);
 }
 
 function formatarData(data) {
@@ -379,6 +387,30 @@ function estaNoMes(dataISO) {
     data.getMonth() === hoje.getMonth() &&
     data.getFullYear() === hoje.getFullYear()
   );
+}
+
+function correspondeAoPeriodo(dataISO, periodo) {
+  if (!dataISO || periodo === "all" || periodo === "custom") {
+    return true;
+  }
+
+  if (periodo === "today") {
+    return dataISO === hojeISO();
+  }
+
+  if (periodo === "tomorrow") {
+    return dataISO === amanhaISO();
+  }
+
+  if (periodo === "week") {
+    return estaNaSemana(dataISO);
+  }
+
+  if (periodo === "month") {
+    return estaNoMes(dataISO);
+  }
+
+  return true;
 }
 
 function salvarLocalStorage() {
@@ -564,15 +596,9 @@ function atualizarKPIs() {
     });
   }
 
-  if (periodoAtual === "week") {
+  if (periodoAtual !== "custom") {
     cardsFiltrados = cardsFiltrados.filter((limpeza) => {
-      return estaNaSemana(limpeza.data);
-    });
-  }
-
-  if (periodoAtual === "month") {
-    cardsFiltrados = cardsFiltrados.filter((limpeza) => {
-      return estaNoMes(limpeza.data);
+      return correspondeAoPeriodo(limpeza.data, periodoAtual);
     });
   }
 
@@ -631,11 +657,7 @@ function aplicarFiltros() {
       mostrar = false;
     }
 
-    if (periodoAtual === "week" && !estaNaSemana(cardData)) {
-      mostrar = false;
-    }
-
-    if (periodoAtual === "month" && !estaNoMes(cardData)) {
+    if (!correspondeAoPeriodo(cardData, periodoAtual)) {
       mostrar = false;
     }
 
