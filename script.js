@@ -461,12 +461,31 @@ function dataAnteriorAHoje(data) {
   return dataNormalizada && dataNormalizada < hojeISO();
 }
 
-function timestampLimpeza(limpeza) {
-  const dataISO = normalizarDataISO(limpeza.data);
-  const hora = limpeza.hora || "00:00";
-  const timestamp = new Date(`${dataISO}T${hora}`).getTime();
+function normalizarHoraOrdenacao(hora) {
+  if (!hora) return "00:00";
 
-  return Number.isNaN(timestamp) ? Number.MAX_SAFE_INTEGER : timestamp;
+  const texto = String(hora).trim().toLowerCase();
+  const partes = texto.match(/^(\d{1,2})(?::(\d{1,2}))?h?$/);
+
+  if (!partes) return "00:00";
+
+  const horas = partes[1].padStart(2, "0");
+  const minutos = (partes[2] || "00").padStart(2, "0");
+
+  return `${horas}:${minutos}`;
+}
+
+function compararLimpezasPorDataHora(a, b) {
+  const dataA = normalizarDataISO(a.data);
+  const dataB = normalizarDataISO(b.data);
+
+  if (dataA !== dataB) {
+    return dataA.localeCompare(dataB);
+  }
+
+  return normalizarHoraOrdenacao(a.hora).localeCompare(
+    normalizarHoraOrdenacao(b.hora)
+  );
 }
 
 function salvarLocalStorage() {
@@ -596,9 +615,7 @@ function renderizarCards() {
   completedCardsContainer.innerHTML = "";
   canceledCardsContainer.innerHTML = "";
 
-  limpezas.sort((a, b) => {
-    return timestampLimpeza(a) - timestampLimpeza(b);
-  });
+  limpezas.sort(compararLimpezasPorDataHora);
 
   limpezas.forEach((limpeza) => {
     const card = criarCard(limpeza);
