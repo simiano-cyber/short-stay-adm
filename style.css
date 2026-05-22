@@ -669,7 +669,8 @@ button.is-loading::after {
   display: none;
 }
 
-.quick-filter {
+.quick-filter,
+.history-quick-filter {
   width: auto;
 
   margin: 0;
@@ -690,7 +691,8 @@ button.is-loading::after {
     0 4px 10px rgba(31,78,121,0.05);
 }
 
-.quick-filter:hover {
+.quick-filter:hover,
+.history-quick-filter:hover {
   transform: translateY(-2px);
 }
 
@@ -952,6 +954,11 @@ button.is-loading::after {
 
 .menu-group-title:hover {
   background: rgba(255,255,255,0.08);
+}
+
+.menu-group.active-group .menu-group-title {
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(63,162,227,0.50);
 }
 
 .submenu {

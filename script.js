@@ -36,6 +36,11 @@ const filterData = document.getElementById("filterData");
 const filterPredio = document.getElementById("filterPredio");
 const clearFiltersBtn = document.querySelector(".clear-filters-btn");
 const quickFilters = document.querySelectorAll(".quick-filter");
+const historyQuickFilters = document.querySelectorAll(".history-quick-filter");
+const filterConcluidasResponsavel = document.getElementById("filterConcluidasResponsavel");
+const filterConcluidasPredio = document.getElementById("filterConcluidasPredio");
+const filterCanceladasResponsavel = document.getElementById("filterCanceladasResponsavel");
+const filterCanceladasPredio = document.getElementById("filterCanceladasPredio");
 
 const feedbackModal = document.getElementById("feedbackModal");
 const feedbackIcon = document.getElementById("feedbackIcon");
@@ -61,6 +66,10 @@ let cardAtual = null;
 let limpezas = [];
 let contadorLimpezas = 1;
 let periodoAtual = "today";
+const periodosHistorico = {
+  concluidas: "today",
+  canceladas: "today"
+};
 
 function mostrarFeedback({ titulo, mensagem, tipo = "success" }) {
   feedbackTitle.textContent = titulo;
@@ -514,6 +523,42 @@ function dataAnteriorAHoje(data) {
   return dataNormalizada && dataNormalizada < hojeISO();
 }
 
+function dataHistoricoEmPeriodo(dataISO, periodo) {
+  const dataNormalizada = normalizarDataSistema(dataISO);
+
+  if (!dataNormalizada || periodo === "all") {
+    return true;
+  }
+
+  const hoje = hojeISO();
+
+  if (periodo === "today") {
+    return dataNormalizada === hoje;
+  }
+
+  if (periodo === "7d") {
+    const inicio = new Date(`${hoje}T00:00:00`);
+    inicio.setDate(inicio.getDate() - 6);
+
+    return dataNormalizada >= dataLocalISO(inicio) && dataNormalizada <= hoje;
+  }
+
+  if (periodo === "current") {
+    return estaNoMes(dataNormalizada);
+  }
+
+  if (periodo === "previous") {
+    const hojeData = new Date(`${hoje}T00:00:00`);
+    const mesAnterior = new Date(hojeData.getFullYear(), hojeData.getMonth() - 1, 1);
+    const inicio = dataLocalISO(mesAnterior);
+    const fim = dataLocalISO(new Date(hojeData.getFullYear(), hojeData.getMonth(), 0));
+
+    return dataNormalizada >= inicio && dataNormalizada <= fim;
+  }
+
+  return true;
+}
+
 function extrairHoraMinuto(hora) {
   if (!hora) {
     return { horas: 12, minutos: 0 };
@@ -715,6 +760,7 @@ if (limpeza.status === "concluido") {
   atualizarKPIs();
   salvarLocalStorage();
   aplicarFiltros();
+  aplicarFiltrosHistorico();
 }
 
 function atualizarKPIs() {
@@ -815,6 +861,51 @@ function aplicarFiltros() {
   atualizarKPIs();
 }
 
+function aplicarFiltroHistorico(config) {
+  const cards = document.querySelectorAll(`#${config.containerId} .card`);
+  const responsavel = config.responsavelSelect?.value || "";
+  const predio = config.predioSelect?.value || "";
+  const periodo = periodosHistorico[config.tipo];
+
+  cards.forEach((card) => {
+    const cardResponsavel = card.dataset.responsavel;
+    const cardPredio = card.dataset.predio;
+    const cardData = card.dataset.data;
+
+    let mostrar = true;
+
+    if (responsavel && responsavel !== cardResponsavel) {
+      mostrar = false;
+    }
+
+    if (predio && predio !== cardPredio) {
+      mostrar = false;
+    }
+
+    if (!dataHistoricoEmPeriodo(cardData, periodo)) {
+      mostrar = false;
+    }
+
+    card.style.display = mostrar ? "block" : "none";
+  });
+}
+
+function aplicarFiltrosHistorico() {
+  aplicarFiltroHistorico({
+    tipo: "concluidas",
+    containerId: "completedCardsContainer",
+    responsavelSelect: filterConcluidasResponsavel,
+    predioSelect: filterConcluidasPredio
+  });
+
+  aplicarFiltroHistorico({
+    tipo: "canceladas",
+    containerId: "canceledCardsContainer",
+    responsavelSelect: filterCanceladasResponsavel,
+    predioSelect: filterCanceladasPredio
+  });
+}
+
 /* MENU */
 
 const operacaoMenu =
@@ -833,6 +924,8 @@ operacaoTitle.addEventListener("click", () => {
 
 document.querySelectorAll(".menu-item").forEach((item) => {
   item.addEventListener("click", () => {
+    const pageId = item.dataset.page;
+
     document.querySelectorAll(".menu-item").forEach((menu) => {
       menu.classList.remove("active");
     });
@@ -843,8 +936,21 @@ document.querySelectorAll(".menu-item").forEach((item) => {
 
     item.classList.add("active");
 
-    const pageId = item.dataset.page;
     document.getElementById(pageId).classList.add("active-page");
+
+    const operacaoPages = ["ativasPage", "concluidasPage", "canceladasPage"];
+    const mobileMenu = window.matchMedia("(max-width: 900px)").matches;
+
+    if (item.closest("#operacaoMenu") && operacaoPages.includes(pageId)) {
+      operacaoMenu.classList.add("active-group");
+    } else {
+      operacaoMenu.classList.remove("active-group");
+    }
+
+    if (mobileMenu && item.closest("#operacaoMenu") && operacaoPages.includes(pageId)) {
+      operacaoMenu.classList.remove("open");
+      operacaoMenu.classList.add("closed");
+    }
   });
 });
 
@@ -1164,6 +1270,35 @@ quickFilters.forEach((btn) => {
 
     aplicarFiltroRapido(btn.dataset.period);
   });
+});
+
+historyQuickFilters.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const tipo = btn.dataset.historyFilter;
+
+    periodosHistorico[tipo] = btn.dataset.period;
+
+    historyQuickFilters.forEach((item) => {
+      if (item.dataset.historyFilter === tipo) {
+        item.classList.remove("active-quick");
+      }
+    });
+
+    btn.classList.add("active-quick");
+
+    aplicarFiltrosHistorico();
+  });
+});
+
+[
+  filterConcluidasResponsavel,
+  filterConcluidasPredio,
+  filterCanceladasResponsavel,
+  filterCanceladasPredio
+].forEach((select) => {
+  if (select) {
+    select.addEventListener("change", aplicarFiltrosHistorico);
+  }
 });
 
 /* IMPORTAR CSV */
