@@ -354,9 +354,40 @@ function amanhaISO() {
   return dataLocalISO(data);
 }
 
-function formatarData(data) {
+function normalizarDataISO(data) {
   if (!data) return "";
-  return data.split("-").reverse().join("/");
+
+  const texto = String(data).trim();
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
+    return texto;
+  }
+
+  const partesBR = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+  if (partesBR) {
+    const dia = partesBR[1].padStart(2, "0");
+    const mes = partesBR[2].padStart(2, "0");
+    const ano = partesBR[3];
+
+    return `${ano}-${mes}-${dia}`;
+  }
+
+  const dataConvertida = new Date(texto);
+
+  if (!Number.isNaN(dataConvertida.getTime())) {
+    return dataLocalISO(dataConvertida);
+  }
+
+  return "";
+}
+
+function formatarData(data) {
+  const dataISO = normalizarDataISO(data);
+
+  if (!dataISO) return "";
+
+  return dataISO.split("-").reverse().join("/");
 }
 
 function preencherDataPadrao() {
@@ -366,7 +397,8 @@ function preencherDataPadrao() {
 
 function estaNaSemana(dataISO) {
   const hoje = new Date();
-  const data = new Date(`${dataISO}T00:00:00`);
+  const dataNormalizada = normalizarDataISO(dataISO);
+  const data = new Date(`${dataNormalizada}T00:00:00`);
 
   const inicioSemana = new Date(hoje);
   inicioSemana.setDate(hoje.getDate() - hoje.getDay());
@@ -381,7 +413,8 @@ function estaNaSemana(dataISO) {
 
 function estaNoMes(dataISO) {
   const hoje = new Date();
-  const data = new Date(`${dataISO}T00:00:00`);
+  const dataNormalizada = normalizarDataISO(dataISO);
+  const data = new Date(`${dataNormalizada}T00:00:00`);
 
   return (
     data.getMonth() === hoje.getMonth() &&
@@ -390,27 +423,37 @@ function estaNoMes(dataISO) {
 }
 
 function correspondeAoPeriodo(dataISO, periodo) {
-  if (!dataISO || periodo === "all" || periodo === "custom") {
+  const dataNormalizada = normalizarDataISO(dataISO);
+
+  if (!dataNormalizada || periodo === "all" || periodo === "custom") {
     return true;
   }
 
   if (periodo === "today") {
-    return dataISO === hojeISO();
+    return dataNormalizada === hojeISO();
   }
 
   if (periodo === "tomorrow") {
-    return dataISO === amanhaISO();
+    return dataNormalizada === amanhaISO();
   }
 
   if (periodo === "week") {
-    return estaNaSemana(dataISO);
+    return estaNaSemana(dataNormalizada);
   }
 
   if (periodo === "month") {
-    return estaNoMes(dataISO);
+    return estaNoMes(dataNormalizada);
   }
 
   return true;
+}
+
+function timestampLimpeza(limpeza) {
+  const dataISO = normalizarDataISO(limpeza.data);
+  const hora = limpeza.hora || "00:00";
+  const timestamp = new Date(`${dataISO}T${hora}`).getTime();
+
+  return Number.isNaN(timestamp) ? Number.MAX_SAFE_INTEGER : timestamp;
 }
 
 function salvarLocalStorage() {
@@ -545,10 +588,7 @@ function renderizarCards() {
   canceledCardsContainer.innerHTML = "";
 
   limpezas.sort((a, b) => {
-    const dataA = new Date(`${a.data}T${a.hora}`);
-    const dataB = new Date(`${b.data}T${b.hora}`);
-
-    return dataA - dataB;
+    return timestampLimpeza(a) - timestampLimpeza(b);
   });
 
   limpezas.forEach((limpeza) => {
