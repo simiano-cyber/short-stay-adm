@@ -354,40 +354,50 @@ function amanhaISO() {
   return dataLocalISO(data);
 }
 
-function normalizarDataISO(data) {
+function normalizarDataSistema(data, origem) {
   if (!data) return "";
 
   const texto = String(data).trim();
 
-  if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
-    return texto;
+  if (texto.includes("T")) {
+    return texto.split("T")[0];
   }
 
-  const partesBR = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (texto.includes("-")) {
+    const partes = texto.split("-");
 
-  if (partesBR) {
-    const dia = partesBR[1].padStart(2, "0");
-    const mes = partesBR[2].padStart(2, "0");
-    const ano = partesBR[3];
+    if (partes[0].length === 4) {
+      return texto.split(" ")[0];
+    }
+  }
+
+  if (texto.includes("/")) {
+    const partes = texto.split("/");
+    const mes = partes[0].padStart(2, "0");
+    const dia = partes[1].padStart(2, "0");
+    const ano = partes[2]?.trim().split(" ")[0];
+
+    if (!ano) return texto;
 
     return `${ano}-${mes}-${dia}`;
   }
 
-  const dataConvertida = new Date(texto);
-
-  if (!Number.isNaN(dataConvertida.getTime())) {
-    return dataLocalISO(dataConvertida);
-  }
-
-  return "";
+  return texto;
 }
 
 function formatarData(data) {
-  const dataISO = normalizarDataISO(data);
+  if (!data) return "";
 
-  if (!dataISO) return "";
+  const dataISO = normalizarDataSistema(data);
+  const partes = dataISO.split("-");
 
-  return dataISO.split("-").reverse().join("/");
+  if (partes.length !== 3) return data;
+
+  const ano = partes[0].slice(2);
+  const mes = partes[1];
+  const dia = partes[2];
+
+  return `${dia}/${mes}/${ano}`;
 }
 
 function preencherDataPadrao() {
@@ -397,7 +407,7 @@ function preencherDataPadrao() {
 
 function estaNaSemana(dataISO) {
   const hoje = new Date();
-  const dataNormalizada = normalizarDataISO(dataISO);
+  const dataNormalizada = normalizarDataSistema(dataISO);
   const data = new Date(`${dataNormalizada}T00:00:00`);
 
   const inicioSemana = new Date(hoje);
@@ -413,7 +423,7 @@ function estaNaSemana(dataISO) {
 
 function estaNoMes(dataISO) {
   const hoje = new Date();
-  const dataNormalizada = normalizarDataISO(dataISO);
+  const dataNormalizada = normalizarDataSistema(dataISO);
   const data = new Date(`${dataNormalizada}T00:00:00`);
 
   return (
@@ -423,7 +433,7 @@ function estaNoMes(dataISO) {
 }
 
 function correspondeAoPeriodo(dataISO, periodo) {
-  const dataNormalizada = normalizarDataISO(dataISO);
+  const dataNormalizada = normalizarDataSistema(dataISO);
 
   if (!dataNormalizada || periodo === "all" || periodo === "custom") {
     return true;
@@ -449,14 +459,14 @@ function correspondeAoPeriodo(dataISO, periodo) {
 }
 
 function mesmaData(dataA, dataB) {
-  const dataNormalizadaA = normalizarDataISO(dataA);
-  const dataNormalizadaB = normalizarDataISO(dataB);
+  const dataNormalizadaA = normalizarDataSistema(dataA);
+  const dataNormalizadaB = normalizarDataSistema(dataB);
 
   return dataNormalizadaA && dataNormalizadaA === dataNormalizadaB;
 }
 
 function dataAnteriorAHoje(data) {
-  const dataNormalizada = normalizarDataISO(data);
+  const dataNormalizada = normalizarDataSistema(data);
 
   return dataNormalizada && dataNormalizada < hojeISO();
 }
@@ -476,8 +486,8 @@ function normalizarHoraOrdenacao(hora) {
 }
 
 function compararLimpezasPorDataHora(a, b) {
-  const dataA = normalizarDataISO(a.data);
-  const dataB = normalizarDataISO(b.data);
+  const dataA = normalizarDataSistema(a.data, a.origem);
+  const dataB = normalizarDataSistema(b.data, b.origem);
 
   if (dataA !== dataB) {
     return dataA.localeCompare(dataB);
@@ -496,7 +506,10 @@ function carregarLocalStorage() {
   const salvas = localStorage.getItem("limpezas");
 
   if (salvas) {
-    limpezas = JSON.parse(salvas);
+    limpezas = JSON.parse(salvas).map((limpeza) => ({
+      ...limpeza,
+      data: normalizarDataSistema(limpeza.data, limpeza.origem)
+    }));
     contadorLimpezas = limpezas.length + 1;
   }
 }
@@ -811,7 +824,7 @@ saveBtn.addEventListener("click", () => {
   const faxineira = faxineiraSelect.value;
   const tipoFaxina = tipoFaxinaSelect.value;
   const qtdHospedes = qtdHospedesInput.value;
-  const data = dataLimpeza.value;
+  const data = normalizarDataSistema(dataLimpeza.value, "manual");
   const hora = horaLimpeza.value;
 
   if (!predio || !apartamento || !faxineira || !tipoFaxina || !qtdHospedes || !data || !hora) {
@@ -1115,7 +1128,7 @@ async function processarCSV(csv) {
   const detalhesFalhas = [];
   for (let index = 0; index < reservasValidas.length; index++) {
     const reserva = reservasValidas[index];
-    const checkout = reserva["Check-out date"];
+    const checkout = normalizarDataSistema(reserva["Check-out date"], "booking");
     const referencia = reserva["Reference number"];
     const nomeImovel = reserva["Property name"];
     const dadosImovel = mapaImoveisBooking[nomeImovel];
@@ -1259,8 +1272,9 @@ async function processarAirbnbCSV(csv) {
     const reserva = reservasValidas[index];
 
     const checkout =
-      converterDataAirbnb(
-        reserva["Data de término"]
+      normalizarDataSistema(
+        reserva["Data de término"],
+        "airbnb"
       );
 
     const referencia =
@@ -1357,16 +1371,6 @@ async function processarAirbnbCSV(csv) {
   }
 }
 
-function converterDataAirbnb(data) {
-
-  if (!data) return "";
-
-  const partes = data.split("/");
-
-  return `${partes[2]}-${partes[0]}-${partes[1]}`;
-}
-
-
 /* INICIAR SISTEMA */
 
 window.addEventListener("load", () => {
@@ -1394,6 +1398,9 @@ async function carregarLimpezasSheets() {
     limpezas = dados.limpezas.map((item) => ({
 
       ...item,
+
+      data:
+        normalizarDataSistema(item.data, item.origem),
 
       qtdHospedes:
         Number(item.qtdHospedes) || 0,
