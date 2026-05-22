@@ -335,40 +335,50 @@ const apartamentosPorPredio = {
   "Haus Mitre": ["apto 709"]
 };
 
+function dataLocalISO(data) {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
 function hojeISO() {
-  return new Date().toISOString().split("T")[0];
+  return dataLocalISO(new Date());
 }
 
 function amanhaISO() {
   const data = new Date();
   data.setDate(data.getDate() + 1);
-  return data.toISOString().split("T")[0];
+  return dataLocalISO(data);
 }
 
-function normalizarDataISO(data) {
+function normalizarDataSistema(data, origem) {
   if (!data) return "";
 
   const texto = String(data).trim();
 
-  const isoMatch = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (isoMatch) {
-    return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+  if (texto.includes("T")) {
+    return texto.split("T")[0];
   }
 
-  const partesBarra = texto.split("/");
-  if (partesBarra.length === 3) {
-    const [dia, mes, ano] = partesBarra;
-    if (ano.length === 4) {
-      return `${ano}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}`;
-    }
-    if (dia.length === 4) {
-      return `${dia}-${mes.padStart(2, "0")}-${ano.padStart(2, "0")}`;
+  if (texto.includes("-")) {
+    const partes = texto.split("-");
+
+    if (partes[0].length === 4) {
+      return texto.split(" ")[0];
     }
   }
 
-  const dataObj = new Date(texto);
-  if (!Number.isNaN(dataObj.getTime())) {
-    return dataObj.toISOString().split("T")[0];
+  if (texto.includes("/")) {
+    const partes = texto.split("/");
+    const mes = partes[0].padStart(2, "0");
+    const dia = partes[1].padStart(2, "0");
+    const ano = partes[2]?.trim().split(" ")[0];
+
+    if (!ano) return texto;
+
+    return `${ano}-${mes}-${dia}`;
   }
 
   return texto;
@@ -377,13 +387,16 @@ function normalizarDataISO(data) {
 function formatarData(data) {
   if (!data) return "";
 
-  const dataISO = normalizarDataISO(data);
-  const match = dataISO.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (match) {
-    return `${match[3]}/${match[2]}/${match[1]}`;
-  }
+  const dataISO = normalizarDataSistema(data);
+  const partes = dataISO.split("-");
 
-  return dataISO;
+  if (partes.length !== 3) return data;
+
+  const ano = partes[0].slice(2);
+  const mes = partes[1];
+  const dia = partes[2];
+
+  return `${dia}/${mes}/${ano}`;
 }
 
 function preencherDataPadrao() {
@@ -393,7 +406,8 @@ function preencherDataPadrao() {
 
 function estaNaSemana(dataISO) {
   const hoje = new Date();
-  const data = new Date(`${dataISO}T00:00:00`);
+  const dataNormalizada = normalizarDataSistema(dataISO);
+  const data = new Date(`${dataNormalizada}T00:00:00`);
 
   const inicioSemana = new Date(hoje);
   inicioSemana.setDate(hoje.getDate() - hoje.getDay());
@@ -408,11 +422,52 @@ function estaNaSemana(dataISO) {
 
 function estaNoMes(dataISO) {
   const hoje = new Date();
-  const data = new Date(`${dataISO}T00:00:00`);
+  const dataNormalizada = normalizarDataSistema(dataISO);
+  const data = new Date(`${dataNormalizada}T00:00:00`);
 
   return (
     data.getMonth() === hoje.getMonth() &&
     data.getFullYear() === hoje.getFullYear()
+  );
+}
+
+function mesmaData(dataA, dataB) {
+  const dataNormalizadaA = normalizarDataSistema(dataA);
+  const dataNormalizadaB = normalizarDataSistema(dataB);
+
+  return dataNormalizadaA && dataNormalizadaA === dataNormalizadaB;
+}
+
+function dataAnteriorAHoje(data) {
+  const dataNormalizada = normalizarDataSistema(data);
+
+  return dataNormalizada && dataNormalizada < hojeISO();
+}
+
+function normalizarHoraOrdenacao(hora) {
+  if (!hora) return "00:00";
+
+  const texto = String(hora).trim().toLowerCase();
+  const partes = texto.match(/^(\d{1,2})(?::(\d{1,2}))?h?$/);
+
+  if (!partes) return "00:00";
+
+  const horas = partes[1].padStart(2, "0");
+  const minutos = (partes[2] || "00").padStart(2, "0");
+
+  return `${horas}:${minutos}`;
+}
+
+function compararLimpezasPorDataHora(a, b) {
+  const dataA = normalizarDataSistema(a.data, a.origem);
+  const dataB = normalizarDataSistema(b.data, b.origem);
+
+  if (dataA !== dataB) {
+    return dataA.localeCompare(dataB);
+  }
+
+  return normalizarHoraOrdenacao(a.hora).localeCompare(
+    normalizarHoraOrdenacao(b.hora)
   );
 }
 
@@ -426,6 +481,7 @@ function carregarLocalStorage() {
   if (salvas) {
     limpezas = JSON.parse(salvas).map((item) => ({
       ...item,
+      data: normalizarDataSistema(item.data, item.origem),
       hora: normalizarHora(item.hora)
     }));
     contadorLimpezas = limpezas.length + 1;
@@ -442,13 +498,11 @@ function limparFormulario() {
 }
 
  function definirClassePrazo(dataLimpezaCard) {
-  const hoje = hojeISO();
-
-  if (dataLimpezaCard < hoje) {
+  if (dataAnteriorAHoje(dataLimpezaCard)) {
     return "status-vencido";
   }
 
-  if (dataLimpezaCard === hoje) {
+  if (mesmaData(dataLimpezaCard, hojeISO())) {
     return "status-hoje";
   }
 
@@ -456,13 +510,11 @@ function limparFormulario() {
 }
 
 function definirTextoPrazo(dataLimpezaCard) {
-  const hoje = hojeISO();
-
-  if (dataLimpezaCard < hoje) {
+  if (dataAnteriorAHoje(dataLimpezaCard)) {
     return "Vencido";
   }
 
-  if (dataLimpezaCard === hoje) {
+  if (mesmaData(dataLimpezaCard, hojeISO())) {
     return "Hoje";
   }
 
@@ -550,12 +602,7 @@ function renderizarCards() {
   completedCardsContainer.innerHTML = "";
   canceledCardsContainer.innerHTML = "";
 
-  limpezas.sort((a, b) => {
-    const dataA = new Date(`${a.data}T${a.hora}`);
-    const dataB = new Date(`${b.data}T${b.hora}`);
-
-    return dataA - dataB;
-  });
+  limpezas.sort(compararLimpezasPorDataHora);
 
   limpezas.forEach((limpeza) => {
     const card = criarCard(limpeza);
@@ -597,14 +644,14 @@ function atualizarKPIs() {
 
   if (periodoAtual === "today") {
     cardsFiltrados = cardsFiltrados.filter((limpeza) => {
-      return limpeza.data === hoje;
+      return mesmaData(limpeza.data, hoje);
     });
   }
 
   if (periodoAtual === "tomorrow") {
     const amanha = amanhaISO();
     cardsFiltrados = cardsFiltrados.filter((limpeza) => {
-      return limpeza.data === amanha;
+      return mesmaData(limpeza.data, amanha);
     });
   }
 
@@ -628,14 +675,14 @@ const pendentes = cardsFiltrados.filter((limpeza) => {
 });
 
   const hojeCards = cardsFiltrados.filter((limpeza) => {
-    return limpeza.data === hoje;
+    return mesmaData(limpeza.data, hoje);
   });
 
 const vencidas = cardsFiltrados.filter((limpeza) => {
   return (
     limpeza.status !== "concluido" &&
     limpeza.status !== "cancelado" &&
-    limpeza.data < hoje
+    dataAnteriorAHoje(limpeza.data)
   );
   });
 
@@ -671,11 +718,11 @@ function aplicarFiltros() {
       mostrar = false;
     }
 
-    if (periodoAtual === "today" && cardData !== hoje) {
+    if (periodoAtual === "today" && !mesmaData(cardData, hoje)) {
       mostrar = false;
     }
 
-    if (periodoAtual === "tomorrow" && cardData !== amanhaISO()) {
+    if (periodoAtual === "tomorrow" && !mesmaData(cardData, amanhaISO())) {
       mostrar = false;
     }
 
@@ -771,7 +818,7 @@ saveBtn.addEventListener("click", () => {
   const faxineira = faxineiraSelect.value;
   const tipoFaxina = tipoFaxinaSelect.value;
   const qtdHospedes = qtdHospedesInput.value;
-  const data = dataLimpeza.value;
+  const data = normalizarDataSistema(dataLimpeza.value, "manual");
   const hora = horaLimpeza.value;
 
   if (!predio || !apartamento || !faxineira || !tipoFaxina || !qtdHospedes || !data || !hora) {
@@ -1058,7 +1105,7 @@ async function processarCSV(csv) {
   const detalhesFalhas = [];
   for (let index = 0; index < reservasValidas.length; index++) {
     const reserva = reservasValidas[index];
-    const checkout = normalizarDataISO(reserva["Check-out date"]);
+    const checkout = normalizarDataSistema(reserva["Check-out date"], "booking");
     const referencia = reserva["Reference number"];
     const nomeImovel = reserva["Property name"];
     const dadosImovel = mapaImoveisBooking[nomeImovel];
@@ -1201,10 +1248,9 @@ async function processarAirbnbCSV(csv) {
   for (let index = 0; index < reservasValidas.length; index++) {
     const reserva = reservasValidas[index];
 
-    const checkout = normalizarDataISO(
-      converterDataAirbnb(
-        reserva["Data de término"]
-      )
+    const checkout = normalizarDataSistema(
+      reserva["Data de término"],
+      "airbnb"
     );
 
     const referencia =
@@ -1301,18 +1347,6 @@ async function processarAirbnbCSV(csv) {
   }
 }
 
-function converterDataAirbnb(data) {
-  if (!data) return "";
-
-  const partes = data.split("/").map((parte) => parte.trim());
-  if (partes.length !== 3) {
-    return normalizarDataISO(data);
-  }
-
-  const [dia, mes, ano] = partes;
-  return `${ano}-${mes.padStart(2, "0")}-${dia.padStart(2, "0")}`;
-}
-
 function normalizarHora(hora) {
   if (!hora) return "12:00";
 
@@ -1358,6 +1392,9 @@ async function carregarLimpezasSheets() {
     limpezas = dados.limpezas.map((item) => ({
 
       ...item,
+
+      data:
+        normalizarDataSistema(item.data, item.origem),
 
       qtdHospedes:
         Number(item.qtdHospedes) || 0,
