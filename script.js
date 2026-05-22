@@ -812,7 +812,7 @@ faltamInsumos.addEventListener("change", () => {
 
 /* CRIAR LIMPEZA MANUAL */
 
-saveBtn.addEventListener("click", () => {
+saveBtn.addEventListener("click", async () => {
   const predio = predioSelect.value;
   const apartamento = apartamentoSelect.value;
   const faxineira = faxineiraSelect.value;
@@ -842,6 +842,8 @@ saveBtn.addEventListener("click", () => {
 
   contadorLimpezas++;
   limpezas.push(novaLimpeza);
+
+  await salvarLimpezaSheets(novaLimpeza);
 
   renderizarCards();
 
