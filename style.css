@@ -234,28 +234,27 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
 }
 
 .card-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  flex: 1 1 0;
-  min-width: 0;
 }
 
 .card-time {
   color: #64748b;
   font-size: 14px;
   font-weight: 500;
-  white-space: nowrap;
+}
+
+.card-person {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1F4E79;
 }
 
 .card-status {
-  flex: 0 0 auto;
-  margin-left: auto;
   background:
     linear-gradient(135deg, #fff7ed, #ffedd5);
 
@@ -268,13 +267,6 @@ body {
   font-size: 12px;
   font-weight: 700;
 }
-
-.card-person {
-  font-size: 20px;
-  font-weight: 700;
-  color: #1F4E79;
-}
-
 
 /* ADMIN */
 
@@ -641,19 +633,11 @@ button.is-loading::after {
     flex-direction: column;
   }
 
-.filters-container select,
-.filters-container input,
-.filters-container button,
-.clear-filters-btn {
-
-  width: 100%;
-
-  min-height: 52px;
-
-  padding: 14px;
-
-  border-radius: 14px;
-}
+  .filters-container select,
+  .filters-container input,
+  .clear-filters-btn {
+    width: 100%;
+  }
 
   .cards {
     flex-direction: column;

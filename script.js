@@ -32,6 +32,7 @@ const detailApartamento = document.getElementById("detailApartamento");
 const detailInfos = document.getElementById("detailInfos");
 
 const filterResponsavel = document.getElementById("filterResponsavel");
+const filterData = document.getElementById("filterData");
 const filterPredio = document.getElementById("filterPredio");
 const clearFiltersBtn = document.querySelector(".clear-filters-btn");
 const quickFilters = document.querySelectorAll(".quick-filter");
@@ -474,6 +475,32 @@ function estaNoMes(dataISO) {
   );
 }
 
+function correspondeAoPeriodo(dataISO, periodo) {
+  const dataNormalizada = normalizarDataSistema(dataISO);
+
+  if (!dataNormalizada || periodo === "all" || periodo === "custom") {
+    return true;
+  }
+
+  if (periodo === "today") {
+    return dataNormalizada === hojeISO();
+  }
+
+  if (periodo === "tomorrow") {
+    return dataNormalizada === amanhaISO();
+  }
+
+  if (periodo === "week") {
+    return estaNaSemana(dataNormalizada);
+  }
+
+  if (periodo === "month") {
+    return estaNoMes(dataNormalizada);
+  }
+
+  return true;
+}
+
 function mesmaData(dataA, dataB) {
   const dataNormalizadaA = normalizarDataSistema(dataA);
   const dataNormalizadaB = normalizarDataSistema(dataB);
@@ -487,18 +514,48 @@ function dataAnteriorAHoje(data) {
   return dataNormalizada && dataNormalizada < hojeISO();
 }
 
+function extrairHoraMinuto(hora) {
+  if (!hora) {
+    return { horas: 12, minutos: 0 };
+  }
+
+  const texto = String(hora).trim();
+
+  if (texto.includes("T")) {
+    const data = new Date(texto);
+
+    if (!Number.isNaN(data.getTime())) {
+      return {
+        horas: data.getHours(),
+        minutos: data.getMinutes()
+      };
+    }
+  }
+
+  const partes = texto.match(/^(\d{1,2})(?::(\d{1,2}))?h?$/i);
+
+  if (partes) {
+    return {
+      horas: Number(partes[1]),
+      minutos: Number(partes[2] || 0)
+    };
+  }
+
+  return { horas: 12, minutos: 0 };
+}
+
+function formatarHora(hora) {
+  const { horas, minutos } = extrairHoraMinuto(hora);
+
+  return minutos === 0
+    ? `${horas}h`
+    : `${horas}h${String(minutos).padStart(2, "0")}`;
+}
+
 function normalizarHoraOrdenacao(hora) {
-  if (!hora) return "00:00";
+  const { horas, minutos } = extrairHoraMinuto(hora);
 
-  const texto = String(hora).trim().toLowerCase();
-  const partes = texto.match(/^(\d{1,2})(?::(\d{1,2}))?h?$/);
-
-  if (!partes) return "00:00";
-
-  const horas = partes[1].padStart(2, "0");
-  const minutos = (partes[2] || "00").padStart(2, "0");
-
-  return `${horas}:${minutos}`;
+  return `${String(horas).padStart(2, "0")}:${String(minutos).padStart(2, "0")}`;
 }
 
 function compararLimpezasPorDataHora(a, b) {
@@ -522,10 +579,10 @@ function carregarLocalStorage() {
   const salvas = localStorage.getItem("limpezas");
 
   if (salvas) {
-    limpezas = JSON.parse(salvas).map((item) => ({
-      ...item,
-      data: normalizarDataSistema(item.data, item.origem),
-      hora: normalizarHora(item.hora)
+    limpezas = JSON.parse(salvas).map((limpeza) => ({
+      ...limpeza,
+      data: normalizarDataSistema(limpeza.data, limpeza.origem),
+      hora: normalizarHora(limpeza.hora)
     }));
     contadorLimpezas = limpezas.length + 1;
   }
@@ -602,7 +659,7 @@ function criarCard(limpeza) {
   card.innerHTML = `
 <div class="card-top">
   <div class="card-date">
-    📅 ${formatarData(limpeza.data)}
+    📅 ${formatarData(limpeza.data)} -${formatarHora(limpeza.hora)}
   </div>
 
   <div class="origin-badge ${definirClasseOrigem(limpeza.origem)}">
@@ -616,16 +673,12 @@ function criarCard(limpeza) {
       </div>
 
       <div class="card-apto">
-        ${limpeza.apartamento}
+        ${limpeza.apartamento} • ${limpeza.qtdHospedes || 2} hósp.
       </div>
     </div>
 
     <div class="card-body">
       <div class="card-info">
-        <div class="card-time">
-          ${limpeza.hora}
-        </div>
-
         <div class="card-person">
           ${limpeza.faxineira}
         </div>
@@ -671,11 +724,18 @@ function atualizarKPIs() {
   let cardsFiltrados = [...limpezas];
 
   const responsavel = filterResponsavel.value;
+  const data = filterData ? filterData.value : "";
   const predio = filterPredio.value;
 
   if (responsavel) {
     cardsFiltrados = cardsFiltrados.filter((limpeza) => {
       return limpeza.faxineira === responsavel;
+    });
+  }
+
+  if (data) {
+    cardsFiltrados = cardsFiltrados.filter((limpeza) => {
+      return mesmaData(limpeza.data, data);
     });
   }
 
@@ -685,28 +745,9 @@ function atualizarKPIs() {
     });
   }
 
-  if (periodoAtual === "today") {
+  if (periodoAtual !== "custom") {
     cardsFiltrados = cardsFiltrados.filter((limpeza) => {
-      return mesmaData(limpeza.data, hoje);
-    });
-  }
-
-  if (periodoAtual === "tomorrow") {
-    const amanha = amanhaISO();
-    cardsFiltrados = cardsFiltrados.filter((limpeza) => {
-      return mesmaData(limpeza.data, amanha);
-    });
-  }
-
-  if (periodoAtual === "week") {
-    cardsFiltrados = cardsFiltrados.filter((limpeza) => {
-      return estaNaSemana(limpeza.data);
-    });
-  }
-
-  if (periodoAtual === "month") {
-    cardsFiltrados = cardsFiltrados.filter((limpeza) => {
-      return estaNoMes(limpeza.data);
+      return correspondeAoPeriodo(limpeza.data, periodoAtual);
     });
   }
 
@@ -742,8 +783,8 @@ const vencidas = cardsFiltrados.filter((limpeza) => {
 function aplicarFiltros() {
   const cards = document.querySelectorAll("#cardsContainer .card");
 
-  const hoje = hojeISO();
   const responsavel = filterResponsavel.value;
+  const data = filterData ? filterData.value : "";
   const predio = filterPredio.value;
 
   cards.forEach((card) => {
@@ -757,23 +798,15 @@ function aplicarFiltros() {
       mostrar = false;
     }
 
+    if (data && !mesmaData(cardData, data)) {
+      mostrar = false;
+    }
+
     if (predio && predio !== cardPredio) {
       mostrar = false;
     }
 
-    if (periodoAtual === "today" && !mesmaData(cardData, hoje)) {
-      mostrar = false;
-    }
-
-    if (periodoAtual === "tomorrow" && !mesmaData(cardData, amanhaISO())) {
-      mostrar = false;
-    }
-
-    if (periodoAtual === "week" && !estaNaSemana(cardData)) {
-      mostrar = false;
-    }
-
-    if (periodoAtual === "month" && !estaNoMes(cardData)) {
+    if (!correspondeAoPeriodo(cardData, periodoAtual)) {
       mostrar = false;
     }
 
@@ -1084,8 +1117,21 @@ cancelCleaningBtn.addEventListener("click", () => {
 filterResponsavel.addEventListener("change", aplicarFiltros);
 filterPredio.addEventListener("change", aplicarFiltros);
 
+if (filterData) {
+  filterData.addEventListener("change", () => {
+    periodoAtual = "custom";
+
+    quickFilters.forEach((btn) => {
+      btn.classList.remove("active-quick");
+    });
+
+    aplicarFiltros();
+  });
+}
+
 clearFiltersBtn.addEventListener("click", () => {
   filterResponsavel.value = "";
+  filterData.value = "";
   filterPredio.value = "";
   periodoAtual = "all";
 
@@ -1100,6 +1146,10 @@ clearFiltersBtn.addEventListener("click", () => {
 
 function aplicarFiltroRapido(periodo) {
   periodoAtual = periodo;
+
+  if (filterData) {
+    filterData.value = "";
+  }
 
   aplicarFiltros();
 }
@@ -1479,13 +1529,13 @@ function normalizarHora(hora) {
   return "12:00";
 }
 
-
 /* INICIAR SISTEMA */
 
 window.addEventListener("load", () => {
   carregarLocalStorage();
   carregarLimpezasSheets();
 
+  filterData.value = hojeISO();
   periodoAtual = "today";
 
   renderizarCards();
@@ -1518,8 +1568,6 @@ async function carregarLimpezasSheets() {
 
       secagem:
         Number(item.secagem) || 0,
-
-      hora: normalizarHora(item.hora),
 
       insumos:
         item.insumos
