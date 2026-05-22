@@ -36,6 +36,12 @@ const filterPredio = document.getElementById("filterPredio");
 const clearFiltersBtn = document.querySelector(".clear-filters-btn");
 const quickFilters = document.querySelectorAll(".quick-filter");
 
+const feedbackModal = document.getElementById("feedbackModal");
+const feedbackIcon = document.getElementById("feedbackIcon");
+const feedbackTitle = document.getElementById("feedbackTitle");
+const feedbackMessage = document.getElementById("feedbackMessage");
+const feedbackOkBtn = document.getElementById("feedbackOkBtn");
+
 const csvFileInput = document.getElementById("csvFileInput");
 const importBtn = document.querySelector(".import-btn");
 const airbnbFileInput = document.getElementById("airbnbFileInput");
@@ -54,6 +60,43 @@ let cardAtual = null;
 let limpezas = [];
 let contadorLimpezas = 1;
 let periodoAtual = "today";
+
+function mostrarFeedback({ titulo, mensagem, tipo = "success" }) {
+  feedbackTitle.textContent = titulo;
+  feedbackMessage.innerHTML = mensagem;
+  feedbackIcon.textContent = tipo === "warning" ? "!" : "✓";
+  feedbackIcon.classList.toggle("warning", tipo === "warning");
+  feedbackModal.style.display = "flex";
+}
+
+function criarResumoImportacao({ criadas, ignoradasHistorico, ignoradasDuplicadas, salvoFalhas }) {
+  return `
+    <p>Processamento concluído.</p>
+    <div class="feedback-summary">
+      <div><span>Criadas</span><strong>${criadas}</strong></div>
+      <div><span>Ignoradas por histórico</span><strong>${ignoradasHistorico}</strong></div>
+      <div><span>Ignoradas por duplicidade</span><strong>${ignoradasDuplicadas}</strong></div>
+      <div><span>Falhas ao salvar no Sheets</span><strong>${salvoFalhas}</strong></div>
+    </div>
+  `;
+}
+
+function setBotaoProcessando(botao, processando, textoProcessando) {
+  if (!botao) return;
+
+  if (processando) {
+    botao.dataset.textoOriginal = botao.textContent;
+    botao.textContent = textoProcessando;
+    botao.disabled = true;
+    botao.classList.add("is-loading");
+    return;
+  }
+
+  botao.textContent = botao.dataset.textoOriginal || botao.textContent;
+  botao.disabled = false;
+  botao.classList.remove("is-loading");
+  delete botao.dataset.textoOriginal;
+}
 
 const GOOGLE_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbzgHwVU-ZEdKYrnpqPtOi9dtW_Vp8BZ1PKu6Ywj5AYlzRbLCu25VaZSLHpTB-8-sAhC/exec";
@@ -787,6 +830,10 @@ closeFinishModal.addEventListener("click", () => {
   finishModal.style.display = "none";
 });
 
+feedbackOkBtn.addEventListener("click", () => {
+  feedbackModal.style.display = "none";
+});
+
 /* APARTAMENTOS POR PRÉDIO */
 
 predioSelect.addEventListener("change", () => {
@@ -822,7 +869,11 @@ saveBtn.addEventListener("click", async () => {
   const hora = horaLimpeza.value;
 
   if (!predio || !apartamento || !faxineira || !tipoFaxina || !qtdHospedes || !data || !hora) {
-    alert("Preencha todos os campos.");
+    mostrarFeedback({
+      titulo: "Campos incompletos",
+      mensagem: "<p>Preencha todos os campos da limpeza manual antes de salvar.</p>",
+      tipo: "warning"
+    });
     return;
   }
 
@@ -843,12 +894,30 @@ saveBtn.addEventListener("click", async () => {
   contadorLimpezas++;
   limpezas.push(novaLimpeza);
 
-  await salvarLimpezaSheets(novaLimpeza);
+  setBotaoProcessando(saveBtn, true, "Salvando...");
+
+  try {
+    await salvarLimpezaSheets(novaLimpeza);
+  } finally {
+    setBotaoProcessando(saveBtn, false);
+  }
 
   renderizarCards();
 
   cleaningModal.style.display = "none";
   limparFormulario();
+
+  mostrarFeedback({
+    titulo: "Limpeza manual criada",
+    mensagem: `
+      <p>A limpeza foi criada e enviada para o Sheets.</p>
+      <div class="feedback-summary">
+        <div><span>Origem</span><strong>Manual</strong></div>
+        <div><span>Data</span><strong>${formatarData(novaLimpeza.data)}</strong></div>
+        <div><span>Horário</span><strong>${novaLimpeza.hora}</strong></div>
+      </div>
+    `
+  });
 });
 
 /* ABRIR MODAL DE CONCLUSÃO */
@@ -1053,15 +1122,35 @@ importBtn.addEventListener("click", () => {
   const arquivo = csvFileInput.files[0];
 
   if (!arquivo) {
-    alert("Selecione um CSV.");
+    mostrarFeedback({
+      titulo: "Arquivo não selecionado",
+      mensagem: "<p>Selecione um arquivo CSV do Booking para continuar.</p>",
+      tipo: "warning"
+    });
     return;
   }
 
+  setBotaoProcessando(importBtn, true, "Importando...");
+
   const reader = new FileReader();
 
-  reader.onload = function (event) {
+  reader.onload = async function (event) {
     const csv = event.target.result;
-    processarCSV(csv);
+
+    try {
+      await processarCSV(csv);
+    } finally {
+      setBotaoProcessando(importBtn, false);
+    }
+  };
+
+  reader.onerror = function () {
+    setBotaoProcessando(importBtn, false);
+    mostrarFeedback({
+      titulo: "Erro na leitura",
+      mensagem: "<p>Não foi possível ler o arquivo selecionado. Tente novamente.</p>",
+      tipo: "warning"
+    });
   };
 
   reader.readAsText(arquivo, "UTF-8");
@@ -1162,14 +1251,16 @@ faxineira: dadosImovel?.faxineira || "Aniele",
 
   renderizarCards();
 
-  alert(
-    `Importação concluída!\n\n` +
-    `Criadas: ${criadas}\n` +
-    `Ignoradas por histórico: ${ignoradasHistorico}\n` +
-    `Ignoradas por duplicidade: ${ignoradasDuplicadas}\n` +
-    `Falhas ao salvar no Sheets: ${salvoFalhas}\n` +
-    `${salvoFalhas ? 'Ver console para detalhes.' : ''}`
-  );
+  mostrarFeedback({
+    titulo: "Importação Booking concluída",
+    mensagem: criarResumoImportacao({
+      criadas,
+      ignoradasHistorico,
+      ignoradasDuplicadas,
+      salvoFalhas
+    }),
+    tipo: salvoFalhas ? "warning" : "success"
+  });
 
   if (detalhesFalhas.length) {
     console.error("Detalhes das falhas (booking):", detalhesFalhas);
@@ -1185,19 +1276,38 @@ importAirbnbBtn.addEventListener("click", () => {
 
   if (!arquivo) {
 
-    alert("Selecione um CSV Airbnb.");
+    mostrarFeedback({
+      titulo: "Arquivo não selecionado",
+      mensagem: "<p>Selecione um arquivo CSV do Airbnb para continuar.</p>",
+      tipo: "warning"
+    });
 
     return;
   }
 
+  setBotaoProcessando(importAirbnbBtn, true, "Importando...");
+
   const reader = new FileReader();
 
-  reader.onload = function(event) {
+  reader.onload = async function(event) {
 
     const csv =
       event.target.result;
 
-    processarAirbnbCSV(csv);
+    try {
+      await processarAirbnbCSV(csv);
+    } finally {
+      setBotaoProcessando(importAirbnbBtn, false);
+    }
+  };
+
+  reader.onerror = function() {
+    setBotaoProcessando(importAirbnbBtn, false);
+    mostrarFeedback({
+      titulo: "Erro na leitura",
+      mensagem: "<p>Não foi possível ler o arquivo selecionado. Tente novamente.</p>",
+      tipo: "warning"
+    });
   };
 
   reader.readAsText(
@@ -1335,14 +1445,16 @@ async function processarAirbnbCSV(csv) {
 
   renderizarCards();
 
-  alert(
-    `Importação Airbnb concluída!\n\n` +
-    `Criadas: ${criadas}\n` +
-    `Histórico ignorado: ${ignoradasHistorico}\n` +
-    `Duplicadas ignoradas: ${ignoradasDuplicadas}\n` +
-    `Falhas ao salvar no Sheets: ${salvoFalhas}\n` +
-    `${salvoFalhas ? 'Ver console para detalhes.' : ''}`
-  );
+  mostrarFeedback({
+    titulo: "Importação Airbnb concluída",
+    mensagem: criarResumoImportacao({
+      criadas,
+      ignoradasHistorico,
+      ignoradasDuplicadas,
+      salvoFalhas
+    }),
+    tipo: salvoFalhas ? "warning" : "success"
+  });
 
   if (detalhesFalhas.length) {
     console.error("Detalhes das falhas (airbnb):", detalhesFalhas);
