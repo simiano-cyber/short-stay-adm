@@ -451,14 +451,14 @@ function verificarSessao() {
 function mostrarFeedback({ titulo, mensagem, tipo = "success" }) {
   feedbackTitle.textContent = titulo;
   feedbackMessage.innerHTML = mensagem;
-  feedbackIcon.textContent = tipo === "warning" ? "!" : "âœ“";
+  feedbackIcon.textContent = tipo === "warning" ? "!" : "✓";
   feedbackIcon.classList.toggle("warning", tipo === "warning");
   feedbackModal.style.display = "flex";
 }
 
 function criarResumoImportacao({ criadas, ignoradasHistorico, ignoradasDuplicadas, salvoFalhas }) {
   return `
-    <p>Processamento concluÃ­do.</p>
+    <p>Processamento concluí­do.</p>
     <div class="feedback-summary">
       <div><span>Criadas</span><strong>${criadas}</strong></div>
       <div><span>Ignoradas por histórico</span><strong>${ignoradasHistorico}</strong></div>
@@ -605,7 +605,7 @@ const filaSheetsLocal = new FilaSheets();
     apartamento: "apto 401",
     faxineira: "Aniele"
   },
-  "Studio AcessÃ­vel PCD na Vila Mariana 100% Adaptado": {
+  "Studio Acessível PCD na Vila Mariana 100% Adaptado": {
     predio: "Haus Mitre",
     apartamento: "apto 709",
     faxineira: "Thais"
@@ -905,6 +905,8 @@ function gerarReceitaPrevistaReserva(limpeza, origem, valorReceita) {
     criadoEm: new Date().toISOString()
   };
 
+  fluxoCaixa.push(novoLancamento);
+  salvarFluxoCaixaSheets(novoLancamento);
   salvarFluxoCaixaLocalStorage();
 }
 
@@ -1151,6 +1153,7 @@ function gerarOuGarantirTaxaFixaMensalApartamentos(dataBase = hojeISO()) {
 };
 
 fluxoCaixa.push(novoLancamento);
+salvarFluxoCaixaSheets(novoLancamento);
 });
   salvarFluxoCaixaLocalStorage();
 }
@@ -1254,6 +1257,7 @@ function gerarOuGarantirComissaoMensalApartamentos(dataBase = hojeISO()) {
     };
    
       fluxoCaixa.push(novoLancamento);
+      salvarFluxoCaixaSheets(novoLancamento);
 
   });
 
@@ -3429,7 +3433,7 @@ finishSaveBtn.addEventListener("click", () => {
   const semOcorrencias = !limpeza.teveDano && !limpeza.faltouInsumo;
 
   mostrarFeedback({
-    titulo: "Limpeza concluÃ­da",
+    titulo: "Limpeza concluí­da",
     mensagem: `
       <p>Registros operacionais atualizados.</p>
       <div class="feedback-summary">
@@ -3470,7 +3474,7 @@ async function salvarLimpezaSheets(limpeza) {
       }
       return data;
     } catch (e) {
-      // resposta não é JSON, mas o POST foi concluÃ­do
+      // resposta não é JSON, mas o POST foi concluído
       return null;
     }
   } catch (erro) {
@@ -3655,7 +3659,7 @@ importBtn.addEventListener("click", () => {
     setBotaoProcessando(importBtn, false);
     mostrarFeedback({
       titulo: "Erro na leitura",
-      mensagem: "<p>Não foi possÃ­vel ler o arquivo selecionado. Tente novamente.</p>",
+      mensagem: "<p>Não foi possível ler o arquivo selecionado. Tente novamente.</p>",
       tipo: "warning"
     });
   };
@@ -3766,7 +3770,7 @@ faxineira: dadosImovel?.faxineira || "Aniele",
   renderizarCards();
 
   mostrarFeedback({
-    titulo: "Importação Booking concluÃ­da",
+    titulo: "Importação Booking concluída",
     mensagem: criarResumoImportacao({
       criadas,
       ignoradasHistorico,
@@ -3819,7 +3823,7 @@ importAirbnbBtn.addEventListener("click", () => {
     setBotaoProcessando(importAirbnbBtn, false);
     mostrarFeedback({
       titulo: "Erro na leitura",
-      mensagem: "<p>Não foi possÃ­vel ler o arquivo selecionado. Tente novamente.</p>",
+      mensagem: "<p>Não foi possível ler o arquivo selecionado. Tente novamente.</p>",
       tipo: "warning"
     });
   };
@@ -3966,7 +3970,7 @@ async function processarAirbnbCSV(csv) {
   renderizarCards();
 
   mostrarFeedback({
-    titulo: "Importação Airbnb concluÃ­da",
+    titulo: "Importação Airbnb concluída",
     mensagem: criarResumoImportacao({
       criadas,
       ignoradasHistorico,
@@ -4194,6 +4198,7 @@ async function carregarLimpezasSheets() {
   }
 
 }
+
 
 
 
