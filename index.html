@@ -13,23 +13,40 @@
 </head>
 
 <body>
-  <div class="container">
+  <section class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <h1>Short Stay ADM</h1>
+      <p>Acesse com seu perfil para continuar.</p>
+      <form class="login-form" id="loginForm">
+        <input type="text" id="loginEmail" placeholder="Usuário" required>
+        <input type="password" id="loginSenha" placeholder="Senha" required>
+        <p class="login-error" id="loginError"></p>
+        <button type="submit">Entrar</button>
+      </form>
+    </div>
+  </section>
+  <div class="container" id="appContainer">
 
     <aside class="sidebar">
       <div class="logo">
         <img src="assets/img/logo_shortstay_cortado.png" alt="Short Stay ADM" class="logo-full">
       </div>
+      <div class="user-box" id="userBox">
+        <strong id="userNome">Usuário</strong>
+        <span id="userPerfil">perfil</span>
+        <button class="logout-btn" id="logoutBtn">Sair</button>
+      </div>
 
       <nav>
         <ul>
-         <li class="menu-group open active-group" id="operacaoMenu">
+         <li class="menu-group closed" id="operacaoMenu">
   <div class="menu-group-title">
     <span>Operação</span>
     <span class="menu-arrow">▼</span>
   </div>
 
   <ul class="submenu">
-    <li class="menu-item active" data-page="ativasPage">
+    <li class="menu-item" data-page="ativasPage">
       Ativas
     </li>
 
@@ -42,13 +59,43 @@
     </li>
   </ul>
 </li>
-</li>
-          <li class="menu-item" data-page="adminPage">
-            Gestão
+          <li class="menu-group closed" id="gestaoMenu">
+            <div class="menu-group-title">
+              <span>Gestão</span>
+              <span class="menu-arrow">▼</span>
+            </div>
+            <ul class="submenu">
+              <li class="menu-item" data-page="adminPage">
+                Importações
+              </li>
+              <li class="menu-item" data-page="apartamentosPage">
+                Apartamentos
+              </li>
+              <li class="menu-item" data-page="financeiroPage">
+                Financeiro
+              </li>
+              <li class="menu-item" data-page="proprietariosPage">
+                Proprietários
+              </li>
+            </ul>
           </li>
-          <li>Apartamentos</li>
-          <li>Financeiro</li>
-          <li>Relatórios</li>
+          <li class="menu-group closed" id="relatoriosMenu">
+            <div class="menu-group-title">
+              <span>Relatórios</span>
+              <span class="menu-arrow">▼</span>
+            </div>
+            <ul class="submenu">
+              <li class="menu-item" data-page="relatoriosPage" data-relatorio-tab="shortstay">
+                ShortStay
+              </li>
+              <li class="menu-item" data-page="relatoriosPage" data-relatorio-tab="proprietario">
+                Proprietário
+              </li>
+            </ul>
+          </li>
+          <li class="menu-item" data-page="documentacaoPage">
+            Doc
+          </li>
         </ul>
       </nav>
     </aside>
@@ -213,7 +260,277 @@
         </div>
       </section>
 
+      <!-- APARTAMENTOS -->
+      <section class="page" id="apartamentosPage">
+        <div class="header">
+          <h1>Apartamentos</h1>
+          <p>Cadastro de unidades e memória de custos operacionais.</p>
+          <div class="apartamentos-acoes">
+            <button id="novoApartamentoBtn" class="apartamento-new-btn">+ Novo apartamento</button>
+            <select id="apartamentosFiltroPredio" class="apartamento-filtro-predio">
+              <option value="">Todos os prédios</option>
+            </select>
+          </div>
+        </div>
+
+        <section class="apartamentos-summary">
+          <div class="apartamentos-summary-card">
+            <span>Total de prédios</span>
+            <strong id="totalPredios">0</strong>
+          </div>
+          <div class="apartamentos-summary-card">
+            <span>Total de apartamentos</span>
+            <strong id="totalApartamentos">0</strong>
+          </div>
+          <div class="apartamentos-summary-card">
+            <span>Apartamentos ativos</span>
+            <strong id="totalApartamentosAtivos">0</strong>
+          </div>
+        </section>
+
+        <section class="apartamentos-grid" id="apartamentosGrid"></section>
+      </section>
+
+      <section class="page" id="financeiroPage">
+        <div class="header">
+          <h1>Financeiro</h1>
+          <p>Fluxo de caixa operacional gerado pelas finalizações.</p>
+        </div>
+
+        <section class="financeiro-summary">
+          <div class="financeiro-card"><span>Total de lançamentos</span><strong id="financeiroTotalLancamentos">0</strong></div>
+          <div class="financeiro-card"><span>Total de saídas</span><strong id="financeiroTotalSaidas">R$ 0,00</strong></div>
+          <div class="financeiro-card"><span>Total de entradas</span><strong id="financeiroTotalEntradas">R$ 0,00</strong></div>
+          <div class="financeiro-card"><span>Resultado</span><strong id="financeiroResultado">R$ 0,00</strong></div>
+        </section>
+
+        <section class="financeiro-filters">
+          <select id="financeiroFiltroMes">
+            <option value="">Todos os meses</option>
+          </select>
+          <select id="financeiroFiltroPredio">
+            <option value="">Todos os Prédios</option>
+          </select>
+          <select id="financeiroFiltroApartamento">
+            <option value="">Todos os apartamentos</option>
+          </select>
+          <select id="financeiroFiltroCategoria">
+            <option value="">Todas as categorias</option>
+          </select>
+          <button class="financeiro-btn-secundario" id="financeiroLimparFiltrosBtn">Limpar filtros</button>
+          <button class="financeiro-btn-primario" id="financeiroNovoLancamentoBtn">+ Novo lançamento</button>
+        </section>
+
+        <section class="financeiro-table-header">
+          <span>Data</span>
+          <span>Categoria</span>
+          <span>Descrição</span>
+          <span>Prédio</span>
+          <span>Apartamento</span>
+          <span>Qtd</span>
+          <span>Valor unit.</span>
+          <span>Total</span>
+        </section>
+
+        <section class="financeiro-list" id="financeiroList"></section>
+      </section>
+
+      <section class="page" id="relatoriosPage">
+        <div class="header">
+          <h1>Relatórios</h1>
+          <p>Visão consolidada para administração e proprietários.</p>
+        </div>
+
+        <section class="relatorios-topbar">
+          <select id="relatoriosMesCompetencia">
+            <option value="">Competência (mês)</option>
+          </select>
+        </section>
+
+        <section class="relatorios-panel active" id="relatoriosPanelShortstay">
+          <div class="relatorios-cards-grid">
+            <article class="relatorio-card-placeholder"><span>Taxas fixas <small class="badge-entrada">ENTRADA</small></span><strong id="relatorioShortstayTaxasFixas">--</strong></article>
+            <article class="relatorio-card-placeholder"><span>Comissões <small class="badge-entrada">ENTRADA</small></span><strong id="relatorioShortstayComissoes">--</strong></article>
+            <article class="relatorio-card-placeholder"><span>Custos operacionais <small class="badge-saida">SAÍDA</small></span><strong id="relatorioShortstayCustosOperacionais">--</strong></article>
+            <article class="relatorio-card-placeholder"><span>Resultado Shortstay <small class="badge-net">NET</small></span><strong id="relatorioShortstayResultado">--</strong></article>
+          </div>
+        </section>
+
+        <section class="relatorios-panel" id="relatoriosPanelProprietario">
+          <section class="relatorios-proprietario-filtros">
+            <select id="relatorioProprietarioFiltroSelect">
+              <option value="">Selecione o proprietário</option>
+            </select>
+            <select id="relatorioApartamentoFiltroSelect">
+              <option value="">Todos os apartamentos</option>
+            </select>
+          </section>
+          <div class="relatorios-cards-grid">
+            <article class="relatorio-card-placeholder"><span>Receita bruta <small class="badge-entrada">ENTRADA</small></span><strong id="relatorioProprietarioReceitaBruta">--</strong></article>
+            <article class="relatorio-card-placeholder"><span>Custos do Variável <small class="badge-saida">SAÍDA</small></span><strong id="relatorioProprietarioCustos">--</strong></article>
+            <article class="relatorio-card-placeholder"><span>Taxa ADM <small class="badge-saida">SAÍDA</small></span><strong id="relatorioProprietarioTaxaAdm">--</strong></article>
+            <article class="relatorio-card-placeholder"><span>Comissão 10% <small class="badge-saida">SAÍDA</small></span><strong id="relatorioProprietarioComissao">--</strong></article>
+            <article class="relatorio-card-placeholder"><span>Á Receber <small class="badge-net">NET</small></span><strong id="relatorioProprietarioRepasseLiquido">--</strong></article>
+          </div>
+          <section class="relatorio-detalhamento" id="relatorioProprietarioDetalhamento">
+            <h3>Detalhamento do relatório</h3>
+            <div class="relatorio-detalhamento-bloco">
+              <h4>Receitas consideradas</h4>
+              <div class="relatorio-detalhamento-lista" id="relatorioDetalheReceitas"></div>
+            </div>
+            <div class="relatorio-detalhamento-bloco">
+              <h4>Custos descontados</h4>
+              <div class="relatorio-detalhamento-lista" id="relatorioDetalheCustos"></div>
+            </div>
+            <div class="relatorio-detalhamento-bloco">
+              <h4>Taxa ADM</h4>
+              <div class="relatorio-detalhamento-lista" id="relatorioDetalheTaxaAdm"></div>
+            </div>
+            <div class="relatorio-detalhamento-bloco">
+              <h4>Comissão</h4>
+              <div class="relatorio-detalhamento-lista" id="relatorioDetalheComissao"></div>
+            </div>
+          </section>
+        </section>
+      </section>
+
+      <section class="page" id="documentacaoPage">
+        <div class="header">
+          <h1>Doc</h1>
+          <p>Manual técnico e operacional do Short Stay ADM.</p>
+        </div>
+
+        <section class="documentacao-toolbar">
+          <input type="text" id="documentacaoBusca" class="documentacao-search" placeholder="Buscar por título, categoria, tag ou conteúdo...">
+          <div id="documentacaoCategorias" class="documentacao-categorias"></div>
+        </section>
+
+        <section id="documentacaoLista"></section>
+      </section>
+      <section class="page" id="proprietariosPage">
+        <div class="header">
+          <h1>Proprietários</h1>
+          <p>Painel visual por unidade e proprietário.</p>
+        </div>
+
+        <section class="proprietarios-filtros">
+          <select id="proprietarioFiltroSelect">
+            <option value="">Todos os proprietários</option>
+          </select>
+        </section>
+
+        <section class="proprietarios-grid" id="proprietariosGrid"></section>
+      </section>
+
     </main>
+  </div>
+
+  <!-- MODAL APARTAMENTO -->
+  <div class="modal" id="apartamentoModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Editar custos do apartamento</h2>
+        <span class="close-apartamento-modal">&times;</span>
+      </div>
+
+      <input type="hidden" id="apartamentoEditId">
+
+      <label class="apartamento-form-label" for="apartamentoPredioInput">Prédio</label>
+      <input type="text" id="apartamentoPredioInput" placeholder="Prédio do apartamento">
+      <label class="apartamento-form-label" for="apartamentoNumeroInput">Apartamento</label>
+      <input type="text" id="apartamentoNumeroInput" placeholder="Apartamento">
+      <label class="apartamento-form-label" for="apartamentoProprietarioInput">Proprietário</label>
+      <input type="text" id="apartamentoProprietarioInput" placeholder="Proprietário">
+      <label class="apartamento-form-label" for="apartamentoFaxineiraPadraoInput">Faxineira padrão</label>
+      <input type="text" id="apartamentoFaxineiraPadraoInput" placeholder="Faxineira padrão">
+      <label class="apartamento-form-label" for="apartamentoCustoLimpezaInput">Custo limpeza</label>
+      <input type="number" id="apartamentoCustoLimpezaInput" min="0" step="0.01" placeholder="Custo limpeza">
+      <label class="apartamento-form-label" for="apartamentoCustoLavagemInput">Roupa lavagem unitária</label>
+      <input type="number" id="apartamentoCustoLavagemInput" min="0" step="0.01" placeholder="Custo lavagem unitária">
+      <label class="apartamento-form-label" for="apartamentoCustoSecagemInput">Roupa secagem unitária</label>
+      <input type="number" id="apartamentoCustoSecagemInput" min="0" step="0.01" placeholder="Custo secagem unitária">
+      <label class="apartamento-form-label" for="apartamentoTaxaFixaMensalInput">Taxa fixa mensal ADM (R$)</label>
+      <input type="number" id="apartamentoTaxaFixaMensalInput" min="0" step="0.01" placeholder="Taxa fixa mensal de administração (R$)">
+      <label class="apartamento-form-label" for="apartamentoPercentualComissaoInput">Comissão sobre faturamento (%)</label>
+      <input type="number" id="apartamentoPercentualComissaoInput" min="0" step="0.01" placeholder="Comissão sobre faturamento (%)">
+      <div class="apartamento-opcoes-financeiras">
+        <label>
+          <input type="checkbox" id="apartamentoLimpezaDonoInput">
+          Limpeza por conta do Dono
+        </label>
+        <label>
+          <input type="checkbox" id="apartamentoLavagemSecagemDonoInput">
+          Lavagem/Secagem por conta do Dono
+        </label>
+      </div>
+
+      <label class="apartamento-form-label" for="apartamentoStatusInput">Status</label>
+      <select id="apartamentoStatusInput">
+        <option value="true">Ativo</option>
+        <option value="false">Inativo</option>
+      </select>
+
+      <div class="modal-actions">
+        <button class="apartamento-cancel-btn" id="apartamentoCancelBtn">Cancelar</button>
+        <button class="apartamento-save-btn" id="apartamentoSaveBtn">Salvar custos</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL FINANCEIRO -->
+  <div class="modal" id="financeiroModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Novo lançamento financeiro</h2>
+        <span class="close-financeiro-modal">&times;</span>
+      </div>
+
+      <select id="financeiroTipoInput">
+        <option value="saida">Saída</option>
+        <option value="entrada">Entrada</option>
+      </select>
+
+      <select id="financeiroCategoriaInput">
+        <option value="Limpeza">Limpeza</option>
+        <option value="Lavagem">Lavagem</option>
+        <option value="Secagem">Secagem</option>
+        <option value="Insumos">Insumos</option>
+        <option value="Manutenção">Manutenção</option>
+        <option value="Operacional">Operacional</option>
+        <option value="Reembolso">Reembolso</option>
+        <option value="Receita">Receita</option>
+        <option value="Ajuste">Ajuste</option>
+        <option value="Outro">Outro</option>
+      </select>
+
+      <input type="text" id="financeiroDescricaoInput" placeholder="Digite a descrição do lançamento">
+
+      <select id="financeiroPredioInput">
+        <option value="">Selecione o prédio</option>
+      </select>
+
+      <select id="financeiroApartamentoInput">
+        <option value="">Selecione o apartamento</option>
+      </select>
+
+      <input type="number" id="financeiroQuantidadeInput" min="1" step="1" placeholder="Digite a quantidade">
+      <input
+             type="text"
+             id="financeiroValorUnitarioInput"
+             placeholder="Digite o valor em R$"
+             inputmode="numeric"
+            >
+   
+      <input type="date" id="financeiroDataInput">
+
+     <p class="financeiro-total-preview" id="financeiroTotalPreview">1 × R$ 0,00 = Saída de R$ 0,00
+     </p>
+
+      <div class="modal-actions">
+        <button class="apartamento-cancel-btn" id="financeiroCancelBtn">Cancelar</button>
+        <button class="apartamento-save-btn" id="financeiroSalvarBtn">Salvar lançamento</button>
+      </div>
+    </div>
   </div>
 
   <!-- MODAL NOVA LIMPEZA -->
@@ -345,3 +662,22 @@
 </body>
 
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
