@@ -167,7 +167,6 @@ const kpiConcluidas = document.getElementById("kpiConcluidas");
 let cardAtual = null;
 let limpezas = [];
 let fluxoCaixa = [];
-let financeiroOrdenacaoData = "desc";
 let contadorLimpezas = 1;
 let periodoAtual = "today";
 const periodosHistorico = {
@@ -872,7 +871,7 @@ function calcularDatasReceitaPrevista(dataCompetencia) {
   };
 }
 
-function gerarReceitaPrevistaReserva(limpeza, origem, valorReceita, valorInfo = 0) {
+function gerarReceitaPrevistaReserva(limpeza, origem, valorReceita) {
   const valorNumerico = Number(valorReceita);
 
   if (!limpeza || !limpeza.referenciaReserva || !valorNumerico || !Number.isFinite(valorNumerico)) return;
@@ -904,7 +903,6 @@ function gerarReceitaPrevistaReserva(limpeza, origem, valorReceita, valorInfo = 
     quantidade: 1,
     valorUnitario: valorFinal,
     valor: valorFinal,
-    valorInfo: Number(valorInfo) || 0,
     origem,
     referenciaLimpeza: limpeza.id,
     referenciaReserva: limpeza.referenciaReserva,
@@ -1074,10 +1072,7 @@ function popularFiltrosFinanceiro() {
 
   const meses = [...new Set(fluxoCaixa.map((item) => String(item.data || "").slice(0, 7)).filter(Boolean))].sort();
   const predios = [...new Set(fluxoCaixa.map((item) => item.predio).filter(Boolean))].sort();
-  const apartamentosBase = manterPredio
-    ? fluxoCaixa.filter((item) => item.predio === manterPredio)
-    : fluxoCaixa;
-  const apartamentos = [...new Set(apartamentosBase.map((item) => item.apartamento).filter(Boolean))].sort();
+  const apartamentos = [...new Set(fluxoCaixa.map((item) => item.apartamento).filter(Boolean))].sort();
   const categorias = [...new Set(fluxoCaixa.map((item) => item.categoria).filter(Boolean))].sort();
 
   const preencher = (select, placeholder, valores) => {
@@ -1097,7 +1092,7 @@ function popularFiltrosFinanceiro() {
 
   financeiroFiltroMes.value = manterMes;
   financeiroFiltroPredio.value = manterPredio;
-  financeiroFiltroApartamento.value = apartamentos.includes(manterApartamento) ? manterApartamento : "";
+  financeiroFiltroApartamento.value = manterApartamento;
   financeiroFiltroCategoria.value = manterCategoria;
 }
 
@@ -1507,12 +1502,7 @@ function renderizarFinanceiro() {
   popularFiltrosFinanceiro();
   const lancamentos = aplicarFiltrosFinanceiro()
     .slice()
-    .sort((a, b) => {
-      if (financeiroOrdenacaoData === "asc") {
-        return String(a.data || "").localeCompare(String(b.data || ""));
-      }
-      return String(b.data || "").localeCompare(String(a.data || ""));
-    });
+    .sort((a, b) => String(b.data || "").localeCompare(String(a.data || "")));
 
   atualizarResumoFinanceiro(lancamentos);
 
@@ -1524,9 +1514,8 @@ function renderizarFinanceiro() {
   financeiroList.innerHTML = lancamentos
     .map((item) => {
       const valor = Number(item.valor) || 0;
-      const valorInfo = Number(item.valorInfo) || 0;
-      const apartamentoVisual = String(item.apartamento || "-").replace(/^apto\s+/i, "");
-      const natureza = valor > 0 ? "C" : valor < 0 ? "D" : "-";
+      const valorDebito = valor < 0 ? formatarMoeda(Math.abs(valor)) : "-";
+      const valorCredito = valor > 0 ? formatarMoeda(valor) : "-";
       const origemMarcador = item.origem === "manual" ? "M" : "A";
 
       return `
@@ -1536,13 +1525,12 @@ function renderizarFinanceiro() {
             <span data-label="Categoria">${formatarCategoriaVisual(item.categoria)}</span>
             <span data-label="Descrição">${formatarDescricaoFinanceiroVisual(item.descricao)}</span>
             <span data-label="Prédio">${item.predio || "-"}</span>
-            <span data-label="Apto.">${apartamentoVisual}</span>
+            <span data-label="Apartamento">${item.apartamento || "-"}</span>
             <span data-label="Qtd">${item.quantidade ?? "-"}</span>
             <span data-label="Valor unit.">${formatarMoeda(item.valorUnitario || 0)}</span>
-            <span data-label="Valor Efetivo" class="financeiro-valor ${valor < 0 ? "valor-saida" : "valor-entrada"}">${formatarMoeda(Math.abs(valor))}</span>
-            <span data-label="Valor Inf." class="financeiro-valor">${valorInfo > 0 ? formatarMoeda(valorInfo) : "-"}</span>
-            <span data-label="Natureza">${natureza}</span>
             <span data-label="Origem"><small class="financeiro-origem-badge">${origemMarcador}</small></span>
+            <span data-label="Débito" class="financeiro-valor valor-saida">${valorDebito}</span>
+            <span data-label="Crédito" class="financeiro-valor valor-entrada">${valorCredito}</span>
           </div>
         </article>
       `;
@@ -1757,7 +1745,6 @@ function normalizarFluxoCaixaSheets(item) {
     quantidade: toNumber(item?.quantidade, 0),
     valorUnitario: toNumber(item?.valorUnitario, 0),
     valor,
-    valorInfo: toNumber(item?.valorInfo, 0),
     origem: toText(item?.origem),
     referenciaLimpeza: toText(item?.referenciaLimpeza),
     referenciaReserva: toText(item?.referenciaReserva),
@@ -3893,70 +3880,20 @@ importAirbnbBtn.addEventListener("click", () => {
 
 async function processarAirbnbCSV(csv) {
 
-  const parseLinhaCsvAirbnb = (linha) => {
-    const colunas = [];
-    let atual = "";
-    let dentroAspas = false;
-
-    for (let i = 0; i < linha.length; i++) {
-      const char = linha[i];
-      const proximo = linha[i + 1];
-
-      if (char === '"' && proximo === '"') {
-        atual += '"';
-        i++;
-        continue;
-      }
-
-      if (char === '"') {
-        dentroAspas = !dentroAspas;
-        continue;
-      }
-
-      if (char === "," && !dentroAspas) {
-        colunas.push(atual.trim());
-        atual = "";
-        continue;
-      }
-
-      atual += char;
-    }
-
-    colunas.push(atual.trim());
-    return colunas;
-  };
-
-  const normalizarHeaderAirbnb = (texto) => {
-    return String(texto || "")
-      .trim()
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
-  };
-
   const linhas = csv
     .split("\n")
     .map((linha) => linha.trim())
     .filter((linha) => linha.length > 0);
 
-  const cabecalho = parseLinhaCsvAirbnb(linhas[0])
+  const cabecalho = linhas[0]
+    .split(",")
     .map((coluna) => coluna.trim());
-
-  const mapaCabecalho = cabecalho.reduce((mapa, coluna) => {
-    mapa[normalizarHeaderAirbnb(coluna)] = coluna;
-    return mapa;
-  }, {});
-
-  const obterCampoAirbnb = (reserva, nome) => {
-    const coluna = mapaCabecalho[normalizarHeaderAirbnb(nome)];
-    return coluna ? reserva[coluna] : "";
-  };
 
   const reservas = [];
 
   for (let i = 1; i < linhas.length; i++) {
 
-    const valores = parseLinhaCsvAirbnb(linhas[i]);
+    const valores = linhas[i].split(",");
 
     const reserva = {};
 
@@ -3970,7 +3907,7 @@ async function processarAirbnbCSV(csv) {
 
   console.log("CSV headers (Airbnb):", cabecalho);
   const reservasValidas = reservas.filter((reserva) => {
-    return obterCampoAirbnb(reserva, "Tipo") === "Reserva";
+    return reserva["Tipo"] === "Reserva";
   });
   console.log("Reservas válidas (airbnb):", reservasValidas.length);
 
@@ -3986,15 +3923,15 @@ async function processarAirbnbCSV(csv) {
     const reserva = reservasValidas[index];
 
     const checkout = normalizarDataSistema(
-      obterCampoAirbnb(reserva, "Data de término"),
+      reserva["Data de término"],
       "airbnb"
     );
 
     const referencia =
-      obterCampoAirbnb(reserva, "Código de Confirmação");
+      reserva["Código de Confirmação"];
 
     const anuncio =
-      obterCampoAirbnb(reserva, "Anúncio");
+      reserva["Anúncio"];
 
     const dadosImovel =
       mapaImoveisAirbnb[anuncio];  
@@ -4039,7 +3976,7 @@ async function processarAirbnbCSV(csv) {
       qtdHospedes: 2,
 
       hospede:
-        obterCampoAirbnb(reserva, "Hóspede"),
+        reserva["Hóspede"],
 
       anuncio: anuncio,
 
@@ -4063,15 +4000,11 @@ async function processarAirbnbCSV(csv) {
         salvoFalhas++;
         detalhesFalhas.push(`Airbnb ${novaLimpeza.referenciaReserva || novaLimpeza.id}: ${result.erro}`);
       } else {
-        const valorReceita = converterMoedaCsvParaNumero(obterCampoAirbnb(reserva, "Valor"));
-        const valorInfo = converterMoedaCsvParaNumero(obterCampoAirbnb(reserva, "Taxa de limpeza"));
-
-        gerarReceitaPrevistaReserva(
-          novaLimpeza,
-          "receita_prevista_airbnb",
-          valorReceita,
-          valorInfo
+        const valorReservaAirbnb = converterMoedaCsvParaNumero(
+          reserva["Ganhos brutos"] ||
+          reserva["Valor"]
         );
+        gerarReceitaPrevistaReserva(novaLimpeza, "receita_prevista_airbnb", valorReservaAirbnb);
       }
 
       criadas++;
@@ -4234,15 +4167,6 @@ if (financeiroSalvarBtn) {
   financeiroSalvarBtn.addEventListener("click", salvarLancamentoManual);
 }
 
-const financeiroDataHeader = document.querySelector(".financeiro-table-header span:first-child");
-
-if (financeiroDataHeader) {
-  financeiroDataHeader.addEventListener("click", () => {
-    financeiroOrdenacaoData = financeiroOrdenacaoData === "desc" ? "asc" : "desc";
-    renderizarFinanceiro();
-  });
-}
-
 [financeiroTipoInput, financeiroQuantidadeInput, financeiroValorUnitarioInput].forEach((input) => {
   if (input) {
     input.addEventListener("input", calcularValorTotalFinanceiro);
@@ -4318,6 +4242,16 @@ async function carregarLimpezasSheets() {
   }
 
 }
+
+
+
+
+
+
+
+
+
+
 
 
 

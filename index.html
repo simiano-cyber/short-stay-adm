@@ -326,10 +326,13 @@
           <span>Categoria</span>
           <span>Descrição</span>
           <span>Prédio</span>
-          <span>Apartamento</span>
+          <span>Apto.</span>
           <span>Qtd</span>
           <span>Valor unit.</span>
-          <span>Total</span>
+          <span>Valor Efetivo</span>
+          <span>Valor Inf.</span>
+          <span>Natureza</span>
+          <span>Origem</span>
         </section>
 
         <section class="financeiro-list" id="financeiroList"></section>
@@ -449,10 +452,14 @@
       <input type="number" id="apartamentoCustoLavagemInput" min="0" step="0.01" placeholder="Custo lavagem unitária">
       <label class="apartamento-form-label" for="apartamentoCustoSecagemInput">Roupa secagem unitária</label>
       <input type="number" id="apartamentoCustoSecagemInput" min="0" step="0.01" placeholder="Custo secagem unitária">
-      <label class="apartamento-form-label" for="apartamentoTaxaFixaMensalInput">Taxa fixa mensal ADM (R$)</label>
+            <label class="apartamento-form-label" for="apartamentoTaxaFixaMensalInput">Taxa fixa mensal ADM (R$)</label>
       <input type="number" id="apartamentoTaxaFixaMensalInput" min="0" step="0.01" placeholder="Taxa fixa mensal de administração (R$)">
       <label class="apartamento-form-label" for="apartamentoPercentualComissaoInput">Comissão sobre faturamento (%)</label>
       <input type="number" id="apartamentoPercentualComissaoInput" min="0" step="0.01" placeholder="Comissão sobre faturamento (%)">
+      <label class="apartamento-form-label" for="apartamentoLimiteComissaoInput">Limite comissão</label>
+      <input type="number" id="apartamentoLimiteComissaoInput" min="0" step="0.01" placeholder="Ex: 5000">
+      <label class="apartamento-form-label" for="apartamentoPercentualComissaoAcimaLimiteInput">% acima do limite</label>
+      <input type="number" id="apartamentoPercentualComissaoAcimaLimiteInput" min="0" step="0.01" placeholder="Ex: 8">
       <div class="apartamento-opcoes-financeiras">
         <label>
           <input type="checkbox" id="apartamentoLimpezaDonoInput">
@@ -662,7 +669,6 @@
 </body>
 
 </html>
-
 
 
 
