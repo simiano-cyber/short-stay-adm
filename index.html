@@ -74,6 +74,9 @@
               <li class="menu-item" data-page="financeiroPage">
                 Financeiro
               </li>
+              <li class="menu-item" data-page="reservasPage">
+                Reservas
+              </li>
               <li class="menu-item" data-page="proprietariosPage">
                 Proprietários
               </li>
@@ -331,11 +334,43 @@
           <span>Valor unit.</span>
           <span>Valor Efetivo</span>
           <span>Valor Inf.</span>
+          <span>Reserva</span>
           <span>Natureza</span>
           <span>Origem</span>
         </section>
 
         <section class="financeiro-list" id="financeiroList"></section>
+      </section>
+
+      <section class="page" id="reservasPage">
+        <div class="header">
+          <h1>Reservas</h1>
+          <p>Consulta de reservas por código, origem, prédio e mês de entrada.</p>
+        </div>
+
+        <section class="reservas-filters">
+          <input type="text" id="reservasBuscaCodigo" placeholder="Buscar código reserva">
+          <select id="reservasFiltroOrigem">
+            <option value="">Todas as origens</option>
+          </select>
+          <select id="reservasFiltroPredio">
+            <option value="">Todos os prédios</option>
+          </select>
+          <input type="month" id="reservasFiltroMesEntrada">
+        </section>
+
+        <section class="reservas-table-header">
+          <span>Código</span>
+          <span>Origem</span>
+          <span>Hóspede</span>
+          <span>Entrada</span>
+          <span>Saída</span>
+          <span>Prédio</span>
+          <span>Apartamento</span>
+          <span>Valor Efetivo</span>
+        </section>
+
+        <section class="reservas-list" id="reservasList"></section>
       </section>
 
       <section class="page" id="relatoriosPage">
@@ -655,6 +690,18 @@
     </div>
   </div>
 
+  <!-- MODAL RESERVA -->
+  <div class="modal" id="reservaDetalheModal">
+    <div class="modal-content reserva-modal-content">
+      <div class="modal-header">
+        <h2>Detalhes da reserva</h2>
+        <span class="close-reserva-modal">&times;</span>
+      </div>
+
+      <div class="reserva-detail-grid" id="reservaDetalheConteudo"></div>
+    </div>
+  </div>
+
   <!-- MODAL FEEDBACK -->
   <div class="modal feedback-modal" id="feedbackModal">
     <div class="modal-content feedback-content">
@@ -669,8 +716,6 @@
 </body>
 
 </html>
-
-
 
 
 

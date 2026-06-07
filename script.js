@@ -13,6 +13,14 @@ const totalPredios = document.getElementById("totalPredios");
 const totalApartamentos = document.getElementById("totalApartamentos");
 const totalApartamentosAtivos = document.getElementById("totalApartamentosAtivos");
 const financeiroList = document.getElementById("financeiroList");
+const reservasList = document.getElementById("reservasList");
+const reservasBuscaCodigo = document.getElementById("reservasBuscaCodigo");
+const reservasFiltroOrigem = document.getElementById("reservasFiltroOrigem");
+const reservasFiltroPredio = document.getElementById("reservasFiltroPredio");
+const reservasFiltroMesEntrada = document.getElementById("reservasFiltroMesEntrada");
+const reservaDetalheModal = document.getElementById("reservaDetalheModal");
+const reservaDetalheConteudo = document.getElementById("reservaDetalheConteudo");
+const closeReservaModal = document.querySelector(".close-reserva-modal");
 const proprietariosGrid = document.getElementById("proprietariosGrid");
 const proprietarioFiltroSelect = document.getElementById("proprietarioFiltroSelect");
 const financeiroFiltroMes = document.getElementById("financeiroFiltroMes");
@@ -167,6 +175,7 @@ const kpiConcluidas = document.getElementById("kpiConcluidas");
 let cardAtual = null;
 let limpezas = [];
 let fluxoCaixa = [];
+let reservas = [];
 let financeiroOrdenacaoData = "desc";
 let contadorLimpezas = 1;
 let periodoAtual = "today";
@@ -317,8 +326,8 @@ function aplicarPermissoesUsuario() {
   if (!usuarioLogadoAtual) return;
 
   const permissoesPorPerfil = {
-    admin: ["adminPage", "apartamentosPage", "financeiroPage", "proprietariosPage", "relatoriosPage", "documentacaoPage"],
-    gestao: ["adminPage", "apartamentosPage"],
+    admin: ["adminPage", "apartamentosPage", "financeiroPage", "reservasPage", "proprietariosPage", "relatoriosPage", "documentacaoPage"],
+    gestao: ["adminPage", "apartamentosPage", "reservasPage"],
     faxineira: []
   };
 
@@ -337,7 +346,7 @@ function aplicarPermissoesUsuario() {
     menuRelatorios.style.display = "block";
   }
 
-  ["adminPage", "apartamentosPage", "financeiroPage", "proprietariosPage", "relatoriosPage", "documentacaoPage"].forEach((pageId) => {
+  ["adminPage", "apartamentosPage", "financeiroPage", "reservasPage", "proprietariosPage", "relatoriosPage", "documentacaoPage"].forEach((pageId) => {
     const menuItem = document.querySelector(`.menu-item[data-page="${pageId}"]`);
 
     if (!menuItem) return;
@@ -369,7 +378,7 @@ function aplicarPermissoesUsuario() {
 
   const paginaAtiva = document.querySelector(".page.active-page");
   const paginaAtivaId = paginaAtiva?.id || "";
-  const paginaRestrita = ["adminPage", "apartamentosPage", "financeiroPage", "proprietariosPage", "relatoriosPage", "documentacaoPage"];
+  const paginaRestrita = ["adminPage", "apartamentosPage", "financeiroPage", "reservasPage", "proprietariosPage", "relatoriosPage", "documentacaoPage"];
 
   if (paginaRestrita.includes(paginaAtivaId) && !paginasPermitidas.includes(paginaAtivaId)) {
     document.querySelectorAll(".page").forEach((page) => page.classList.remove("active-page"));
@@ -1541,6 +1550,7 @@ function renderizarFinanceiro() {
             <span data-label="Valor unit.">${formatarMoeda(item.valorUnitario || 0)}</span>
             <span data-label="Valor Efetivo" class="financeiro-valor ${valor < 0 ? "valor-saida" : "valor-entrada"}">${formatarMoeda(Math.abs(valor))}</span>
             <span data-label="Valor Inf." class="financeiro-valor">${valorInfo > 0 ? formatarMoeda(valorInfo) : "-"}</span>
+            <span data-label="Reserva">${item.referenciaReserva || "-"}</span>
             <span data-label="Natureza">${natureza}</span>
             <span data-label="Origem"><small class="financeiro-origem-badge">${origemMarcador}</small></span>
           </div>
@@ -1937,6 +1947,224 @@ async function salvarFluxoCaixaSheets(item) {
     console.error("Erro ao salvar fluxoCaixa no Sheets:", erro);
     return false;
   }
+}
+async function salvarReservaSheets(reserva) {
+  if (!reserva) return false;
+
+  try {
+    const resposta = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      mode: "cors",
+      body: JSON.stringify({
+        action: "salvarReserva",
+        reserva
+      })
+    });
+
+    if (!resposta.ok) {
+      console.error("Erro ao salvar reserva no Sheets:", resposta.statusText);
+      return false;
+    }
+
+    const data = await resposta.json().catch(() => ({}));
+
+    if (data?.sucesso === false) {
+      console.error("Erro ao salvar reserva no Sheets:", data?.erro || "Resposta inválida");
+      return false;
+    }
+
+    return true;
+  } catch (erro) {
+    console.error("Erro ao salvar reserva no Sheets:", erro);
+    return false;
+  }
+}
+async function listarReservasSheets() {
+  try {
+    const resposta = await fetch(`${GOOGLE_SCRIPT_URL}?action=listarReservas`);
+
+    if (!resposta.ok) {
+      console.error("Erro ao listar reservas no Sheets:", resposta.statusText);
+      return [];
+    }
+
+    const data = await resposta.json();
+
+    if (data?.sucesso === true && Array.isArray(data?.reservas)) {
+      return data.reservas;
+    }
+
+    console.error("Erro ao listar reservas no Sheets:", data?.erro || "Resposta inválida");
+    return [];
+  } catch (erro) {
+    console.error("Erro ao listar reservas no Sheets:", erro);
+    return [];
+  }
+}
+
+function normalizarReservaSheets(item) {
+  const toText = (valor) => {
+    if (valor === undefined || valor === null) return "";
+    return String(valor).trim();
+  };
+
+  const toNumber = (valor, fallback = 0) => {
+    if (valor === undefined || valor === null || valor === "") return fallback;
+    const numero = Number(String(valor).replace(",", "."));
+    return Number.isFinite(numero) ? numero : fallback;
+  };
+
+  const codigoReserva = toText(item?.codigoReserva);
+  if (!codigoReserva) return null;
+
+  return {
+    codigoReserva,
+    origem: toText(item?.origem),
+    nomeApartamento: toText(item?.nomeApartamento),
+    predio: toText(item?.predio),
+    apartamento: toText(item?.apartamento),
+    hospede: toText(item?.hospede),
+    telefone: toText(item?.telefone),
+    dataEntrada: toText(item?.dataEntrada),
+    dataSaida: toText(item?.dataSaida),
+    dataLimpeza: toText(item?.dataLimpeza),
+    valorEfetivo: toNumber(item?.valorEfetivo, 0),
+    valorInfo: toNumber(item?.valorInfo, 0),
+    statusReserva: toText(item?.statusReserva),
+    dataReserva: toText(item?.dataReserva),
+    criadoEm: toText(item?.criadoEm),
+    atualizadoEm: toText(item?.atualizadoEm)
+  };
+}
+
+async function sincronizarReservasDoSheets() {
+  const listaSheets = await listarReservasSheets();
+  reservas = (Array.isArray(listaSheets) ? listaSheets : [])
+    .map(normalizarReservaSheets)
+    .filter((item) => item !== null);
+
+  popularFiltrosReservas();
+  renderizarReservas();
+}
+
+function popularFiltrosReservas() {
+  if (!reservasFiltroOrigem || !reservasFiltroPredio) return;
+
+  const manterOrigem = reservasFiltroOrigem.value || "";
+  const manterPredio = reservasFiltroPredio.value || "";
+  const origens = [...new Set(reservas.map((item) => item.origem).filter(Boolean))].sort();
+  const predios = [...new Set(reservas.map((item) => item.predio).filter(Boolean))].sort();
+
+  reservasFiltroOrigem.innerHTML = '<option value="">Todas as origens</option>';
+  origens.forEach((origem) => {
+    const option = document.createElement("option");
+    option.value = origem;
+    option.textContent = origem;
+    reservasFiltroOrigem.appendChild(option);
+  });
+
+  reservasFiltroPredio.innerHTML = '<option value="">Todos os prédios</option>';
+  predios.forEach((predio) => {
+    const option = document.createElement("option");
+    option.value = predio;
+    option.textContent = predio;
+    reservasFiltroPredio.appendChild(option);
+  });
+
+  reservasFiltroOrigem.value = origens.includes(manterOrigem) ? manterOrigem : "";
+  reservasFiltroPredio.value = predios.includes(manterPredio) ? manterPredio : "";
+}
+
+function aplicarFiltrosReservas() {
+  const busca = String(reservasBuscaCodigo?.value || "").trim().toLowerCase();
+  const filtroOrigem = reservasFiltroOrigem?.value || "";
+  const filtroPredio = reservasFiltroPredio?.value || "";
+  const filtroMesEntrada = reservasFiltroMesEntrada?.value || "";
+
+  return reservas.filter((item) => {
+    const codigo = String(item.codigoReserva || "").toLowerCase();
+    const hospede = String(item.hospede || "").toLowerCase();
+    const mesEntrada = String(item.dataEntrada || "").slice(0, 7);
+
+    if (busca && !codigo.includes(busca) && !hospede.includes(busca)) return false;
+    if (filtroOrigem && item.origem !== filtroOrigem) return false;
+    if (filtroPredio && item.predio !== filtroPredio) return false;
+    if (filtroMesEntrada && mesEntrada !== filtroMesEntrada) return false;
+
+    return true;
+  });
+}
+
+function renderizarReservas() {
+  if (!reservasList) return;
+
+  popularFiltrosReservas();
+
+  const lista = aplicarFiltrosReservas()
+    .slice()
+    .sort((a, b) => String(b.dataEntrada || "").localeCompare(String(a.dataEntrada || "")));
+
+  if (!lista.length) {
+    reservasList.innerHTML = '<p class="empty-reservas">Nenhuma reserva encontrada.</p>';
+    return;
+  }
+
+  reservasList.innerHTML = lista
+    .map((item) => `
+      <article class="reserva-item" onclick="abrirModalReserva('${item.codigoReserva}')">
+        <div class="reserva-item-header">
+          <span data-label="Código">${item.codigoReserva || "-"}</span>
+          <span data-label="Origem">${item.origem || "-"}</span>
+          <span data-label="Hóspede">${item.hospede || "-"}</span>
+          <span data-label="Entrada">${formatarDataFinanceira(item.dataEntrada)}</span>
+          <span data-label="Saída">${formatarDataFinanceira(item.dataSaida)}</span>
+          <span data-label="Prédio">${item.predio || "-"}</span>
+          <span data-label="Apartamento">${item.apartamento || "-"}</span>
+          <span data-label="Valor Efetivo" class="reserva-valor">${formatarMoeda(item.valorEfetivo || 0)}</span>
+        </div>
+      </article>
+    `)
+    .join("");
+}
+
+function abrirModalReserva(codigoReserva) {
+  const reserva = reservas.find((item) => item.codigoReserva === codigoReserva);
+  if (!reserva || !reservaDetalheModal || !reservaDetalheConteudo) return;
+
+  const campos = [
+    ["Código Reserva", reserva.codigoReserva],
+    ["Origem", reserva.origem],
+    ["Nome Apartamento", reserva.nomeApartamento],
+    ["Hóspede", reserva.hospede],
+    ["Telefone", reserva.telefone],
+    ["Entrada", formatarDataFinanceira(reserva.dataEntrada)],
+    ["Saída", formatarDataFinanceira(reserva.dataSaida)],
+    ["Data Limpeza", formatarDataFinanceira(reserva.dataLimpeza)],
+    ["Prédio", reserva.predio],
+    ["Apartamento", reserva.apartamento],
+    ["Valor Efetivo", formatarMoeda(reserva.valorEfetivo || 0)],
+    ["Valor Informativo", formatarMoeda(reserva.valorInfo || 0)],
+    ["Status Reserva", reserva.statusReserva],
+    ["Data Reserva", reserva.dataReserva],
+    ["Criado Em", reserva.criadoEm],
+    ["Atualizado Em", reserva.atualizadoEm]
+  ];
+
+  reservaDetalheConteudo.innerHTML = campos
+    .map(([label, valor]) => `
+      <div class="reserva-detail-item">
+        <span>${label}</span>
+        <strong>${valor || "-"}</strong>
+      </div>
+    `)
+    .join("");
+
+  reservaDetalheModal.style.display = "flex";
+}
+
+function fecharModalReserva() {
+  if (!reservaDetalheModal) return;
+  reservaDetalheModal.style.display = "none";
 }
 async function salvarApartamentoSheets(apartamento) {
   if (!apartamento) return;
@@ -3246,7 +3474,7 @@ function atualizarEstadoMenu(pageId) {
   });
 
   const operacaoPages = ["ativasPage", "concluidasPage", "canceladasPage"];
-  const gestaoPages = ["adminPage", "apartamentosPage", "financeiroPage", "proprietariosPage"];
+  const gestaoPages = ["adminPage", "apartamentosPage", "financeiroPage", "reservasPage", "proprietariosPage"];
   const relatoriosPages = ["relatoriosPage"];
 
   if (operacaoPages.includes(pageId)) {
@@ -3277,6 +3505,10 @@ document.querySelectorAll(".menu-item").forEach((item) => {
       renderizarProprietarios();
     }
 
+    if (pageId === "reservasPage") {
+      renderizarReservas();
+    }
+
     if (pageId === "relatoriosPage") {
       if (relatorioTab) relatorioTabAtual = relatorioTab;
       renderizarRelatoriosEstrutura();
@@ -3289,7 +3521,7 @@ document.querySelectorAll(".menu-item").forEach((item) => {
     atualizarEstadoMenu(pageId);
 
     const operacaoPages = ["ativasPage", "concluidasPage", "canceladasPage"];
-    const gestaoPages = ["adminPage", "apartamentosPage", "financeiroPage", "proprietariosPage"];
+    const gestaoPages = ["adminPage", "apartamentosPage", "financeiroPage", "reservasPage", "proprietariosPage"];
     const relatoriosPages = ["relatoriosPage"];
     const mobileMenu = window.matchMedia("(max-width: 900px)").matches;
 
@@ -3813,12 +4045,42 @@ faxineira: dadosImovel?.faxineira || "Aniele",
         salvoFalhas++;
         detalhesFalhas.push(`Booking ${novaLimpeza.referenciaReserva || novaLimpeza.id}: ${result.erro}`);
       } else {
-        const valorReservaBooking = converterMoedaCsvParaNumero(
-          reserva["Payable amount"] ||
-          reserva["Payout amount"] ||
+        const pagamentoTotalBooking = converterMoedaCsvParaNumero(
+          reserva["Pagamento total"] ||
           reserva["Gross amount"]
         );
-        gerarReceitaPrevistaReserva(novaLimpeza, "receita_prevista_booking", valorReservaBooking);
+        const comissaoBooking = converterMoedaCsvParaNumero(
+          reserva["Comissão"] ||
+          reserva["Commission amount"] ||
+          reserva["Commission"]
+        );
+        const valorEfetivoBooking = pagamentoTotalBooking - comissaoBooking;
+
+        const reservaSheets = {
+          codigoReserva: reserva["Número da reserva"] || reserva["Reference number"] || referencia,
+          origem: "booking",
+          nomeApartamento: reserva["Nome da propriedade"] || reserva["Property name"] || nomeImovel,
+          predio: novaLimpeza.predio,
+          apartamento: novaLimpeza.apartamento,
+          hospede: reserva["Nome de quem fez a reserva"] || reserva["Guest name"] || "",
+          telefone: reserva["Telefone"] || reserva["Phone number"] || "",
+          dataEntrada: reserva["Chegada"] || reserva["Check-in date"] || "",
+          dataSaida: reserva["Saída"] || reserva["Check-out date"] || "",
+          dataLimpeza: reserva["Saída"] || reserva["Check-out date"] || "",
+          valorEfetivo: valorEfetivoBooking,
+          valorInfo: pagamentoTotalBooking,
+          statusReserva: reserva["Status"] || "",
+          dataReserva: reserva["Reservado em"] || reserva["Booked on"] || "",
+          criadoEm: new Date().toISOString(),
+          atualizadoEm: new Date().toISOString()
+        };
+
+        salvarReservaSheets(reservaSheets);
+        gerarReceitaPrevistaReserva(
+          novaLimpeza,
+          "receita_prevista_booking",
+          valorEfetivoBooking
+        );
       }
 
         criadas++;
@@ -4065,6 +4327,28 @@ async function processarAirbnbCSV(csv) {
       } else {
         const valorReceita = converterMoedaCsvParaNumero(obterCampoAirbnb(reserva, "Valor"));
         const valorInfo = converterMoedaCsvParaNumero(obterCampoAirbnb(reserva, "Taxa de limpeza"));
+        const taxaServico = converterMoedaCsvParaNumero(obterCampoAirbnb(reserva, "Taxa de serviço"));
+
+        const reservaSheets = {
+          codigoReserva: referencia,
+          origem: "airbnb",
+          nomeApartamento: anuncio,
+          predio: novaLimpeza.predio,
+          apartamento: novaLimpeza.apartamento,
+          hospede: obterCampoAirbnb(reserva, "Hóspede"),
+          telefone: "",
+          dataEntrada: obterCampoAirbnb(reserva, "Data de início"),
+          dataSaida: obterCampoAirbnb(reserva, "Data de término"),
+          dataLimpeza: obterCampoAirbnb(reserva, "Data de término"),
+          valorEfetivo: valorReceita,
+          valorInfo: valorReceita + taxaServico,
+          statusReserva: obterCampoAirbnb(reserva, "Tipo"),
+          dataReserva: obterCampoAirbnb(reserva, "Data da reserva"),
+          criadoEm: new Date().toISOString(),
+          atualizadoEm: new Date().toISOString()
+        };
+
+        salvarReservaSheets(reservaSheets);
 
         gerarReceitaPrevistaReserva(
           novaLimpeza,
@@ -4126,6 +4410,7 @@ function iniciarSistema() {
   sincronizarApartamentosDoSheets();
   carregarFluxoCaixaLocalStorage();
   sincronizarFluxoCaixaDoSheets();
+  sincronizarReservasDoSheets();
   renderizarApartamentos();
   renderizarFinanceiro();
 
@@ -4182,6 +4467,17 @@ if (logoutBtn) {
 
 if (financeiroLimparFiltrosBtn) {
   financeiroLimparFiltrosBtn.addEventListener("click", limparFiltrosFinanceiro);
+}
+
+[reservasBuscaCodigo, reservasFiltroOrigem, reservasFiltroPredio, reservasFiltroMesEntrada].forEach((campo) => {
+  if (campo) {
+    campo.addEventListener("input", renderizarReservas);
+    campo.addEventListener("change", renderizarReservas);
+  }
+});
+
+if (closeReservaModal) {
+  closeReservaModal.addEventListener("click", fecharModalReserva);
 }
 
 if (proprietarioFiltroSelect) {
@@ -4318,17 +4614,6 @@ async function carregarLimpezasSheets() {
   }
 
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 

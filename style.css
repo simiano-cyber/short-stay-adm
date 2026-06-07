@@ -499,7 +499,8 @@ button.is-loading::after {
 .close-modal,
 .close-finish-modal,
 .close-apartamento-modal,
-.close-financeiro-modal {
+.close-financeiro-modal,
+.close-reserva-modal {
   width: 40px;
   min-width: 40px;
   height: 40px;
@@ -522,7 +523,8 @@ button.is-loading::after {
 .close-modal:hover,
 .close-finish-modal:hover,
 .close-apartamento-modal:hover,
-.close-financeiro-modal:hover {
+.close-financeiro-modal:hover,
+.close-reserva-modal:hover {
   background: rgba(63,162,227,0.14);
   border-color: rgba(63,162,227,0.42);
   color: #1F4E79;
@@ -1559,7 +1561,7 @@ button.is-loading::after {
 
 .financeiro-table-header {
   display: grid;
-  grid-template-columns: 100px 130px 1.6fr 120px 60px 45px 105px 125px 110px 65px 60px;
+  grid-template-columns: 90px 115px 1.4fr 105px 55px 40px 95px 115px 100px 110px 60px 55px;
   gap: 8px;
   background: #f8fbff;
   border: 1px solid rgba(63,162,227,0.2);
@@ -1589,7 +1591,7 @@ button.is-loading::after {
 
 .financeiro-item-header {
   display: grid;
-  grid-template-columns: 100px 130px 1.6fr 120px 60px 45px 105px 125px 110px 65px 60px;
+  grid-template-columns: 90px 115px 1.4fr 105px 55px 40px 95px 115px 100px 110px 60px 55px;
   gap: 8px;
   align-items: center;
 }
@@ -1655,6 +1657,114 @@ button.is-loading::after {
   font-size: 13px;
 }
 
+/* RESERVAS */
+
+.reservas-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.reservas-filters input,
+.reservas-filters select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(63,162,227,0.25);
+  background: white;
+}
+
+.reservas-table-header {
+  display: grid;
+  grid-template-columns: 130px 90px 1.2fr 100px 100px 130px 100px 130px;
+  gap: 8px;
+  background: #f8fbff;
+  border: 1px solid rgba(63,162,227,0.2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.reservas-table-header span {
+  color: #1F4E79;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.reservas-list {
+  display: grid;
+  gap: 12px;
+}
+
+.reserva-item {
+  background: white;
+  border: 1px solid rgba(63,162,227,0.22);
+  border-radius: 16px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.reserva-item-header {
+  display: grid;
+  grid-template-columns: 130px 90px 1.2fr 100px 100px 130px 100px 130px;
+  gap: 8px;
+  align-items: center;
+}
+
+.reserva-item-header span {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.35;
+  min-width: 0;
+}
+
+.reserva-valor {
+  font-weight: 700;
+  color: #1F4E79;
+  white-space: nowrap;
+}
+
+.empty-reservas {
+  background: white;
+  border: 1px dashed rgba(63,162,227,0.4);
+  border-radius: 14px;
+  padding: 16px;
+  color: #64748b;
+}
+
+.reserva-modal-content {
+  max-width: 720px;
+}
+
+.reserva-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.reserva-detail-item {
+  background: #f8fbff;
+  border: 1px solid rgba(63,162,227,0.18);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.reserva-detail-item span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.reserva-detail-item strong {
+  color: #1F4E79;
+  font-size: 14px;
+  word-break: break-word;
+}
+
 .apartamento-edit-btn {
   margin-top: 10px;
   width: auto;
@@ -1718,6 +1828,29 @@ button.is-loading::after {
     content: attr(data-label) ": ";
     font-weight: 700;
     color: #1F4E79;
+  }
+
+  .reservas-table-header {
+    display: none;
+  }
+
+  .reserva-item {
+    padding: 14px;
+  }
+
+  .reserva-item-header {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .reserva-item-header span::before {
+    content: attr(data-label) ": ";
+    font-weight: 700;
+    color: #1F4E79;
+  }
+
+  .reserva-detail-grid {
+    grid-template-columns: 1fr;
   }
 }
 
