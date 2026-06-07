@@ -3200,7 +3200,7 @@ function criarCard(limpeza) {
   card.innerHTML = `
 <div class="card-top">
   <div class="card-date">
-    ðŸ“… ${formatarData(limpeza.data)} -${formatarHora(limpeza.hora)}
+  📅${formatarData(limpeza.data)} -${formatarHora(limpeza.hora)}
   </div>
 
   <div class="origin-badge ${definirClasseOrigem(limpeza.origem)}">
