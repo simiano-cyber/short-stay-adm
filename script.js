@@ -470,7 +470,7 @@ function mostrarFeedback({ titulo, mensagem, tipo = "success" }) {
 
 function criarResumoImportacao({ criadas, ignoradasHistorico, ignoradasDuplicadas, salvoFalhas }) {
   return `
-    <p>Processamento concluí­do.</p>
+      <p>Processamento concluído.</p>
     <div class="feedback-summary">
       <div><span>Criadas</span><strong>${criadas}</strong></div>
       <div><span>Ignoradas por histórico</span><strong>${ignoradasHistorico}</strong></div>
@@ -607,52 +607,52 @@ const filaSheetsLocal = new FilaSheets();
 
 
   const mapaImoveisAirbnb = {
-  "Stúdio em Perdizes para 5 pessoas próx ao Allianz": {
+  "StÃºdio em Perdizes para 5 pessoas próx ao Allianz": {
     predio: "Bracon Perdizes",
     apartamento: "apto 86",
     faxineira: "Aniele"
   },
-  "Stúdio em Perdizes próx do Allianz Park cama Queen": {
+  "StÃºdio em Perdizes próx do Allianz Park cama Queen": {
     predio: "Essential Perdizes",
     apartamento: "apto 401",
     faxineira: "Aniele"
   },
-  "Studio Acessível PCD na Vila Mariana 100% Adaptado": {
+  "Studio AcessÃ­vel PCD na Vila Mariana 100% Adaptado": {
     predio: "Haus Mitre",
     apartamento: "apto 709",
     faxineira: "Thais"
   },
-  "Stúdio no Brooklin 2 camas próx Berrini Aeroporto": {
+  "StÃºdio no Brooklin 2 camas próx Berrini Aeroporto": {
     predio: "Level",
     apartamento: "apto 1811",
     faxineira: "Aniele"
   },
-  "Stúdio no Brooklin 2 camas próx Aeroporto Berrini": {
+  "StÃºdio no Brooklin 2 camas próx Aeroporto Berrini": {
     predio: "Level",
     apartamento: "apto 1316",
     faxineira: "Thais"
   },
-  "Stúdio Brooklin 4 pessoas próximo Berrini Morumbi": {
+  "StÃºdio Brooklin 4 pessoas próximo Berrini Morumbi": {
     predio: "Level",
     apartamento: "apto 1516",
     faxineira: "Thais"
   },
-  "Stúdio moderno Campo Belo próx. Aeroporto e Metrô": {
+  "StÃºdio moderno Campo Belo próx. Aeroporto e MetrÃ´": {
     predio: "Movi Campo Belo",
     apartamento: "apto 2208",
     faxineira: "Aniele"
   },
-  "Studio 2 camas Campo Belo próx Metrô e Aeroporto": {
+  "Studio 2 camas Campo Belo próx MetrÃ´ e Aeroporto": {
     predio: "Movi Campo Belo",
     apartamento: "apto 1702",
     faxineira: "Aniele"
   },
-  "Studio Moderno Campo Belo próx Aeroporto e Metrô": {
+  "Studio Moderno Campo Belo próx Aeroporto e MetrÃ´": {
     predio: "Movi Campo Belo",
     apartamento: "apto 505",
     faxineira: "Aniele"
   },
-  "Studio moderno Campo Belo próx Metrô e Aeroporto": {
+  "Studio moderno Campo Belo próx MetrÃ´ e Aeroporto": {
     predio: "Movi Campo Belo",
     apartamento: "apto 2008",
     faxineira: "Aniele"
@@ -682,22 +682,22 @@ const filaSheetsLocal = new FilaSheets();
     apartamento: "apto 915",
     faxineira: "Aniele"
   },
-  "Stúdio lindo para 4 pessoas a 500m do Allianz Park": {
+  "StÃºdio lindo para 4 pessoas a 500m do Allianz Park": {
     predio: "Smart Bourbon",
     apartamento: "apto 1010",
     faxineira: "Aniele"
   },
-  "Stúdio moderno em Perdizes perto do Allianz Park": {
+  "StÃºdio moderno em Perdizes perto do Allianz Park": {
     predio: "Smart Bourbon",
     apartamento: "apto 1405",
     faxineira: "Aniele"
   },
-  "Stúdio moderno para 4 pessoas próx. Allianz Park": {
+  "StÃºdio moderno para 4 pessoas próx. Allianz Park": {
     predio: "Smart Bourbon",
     apartamento: "apto 404",
     faxineira: "Aniele"
   },
-  "Stúdio para 4 pessoas próx ao Allianz e São Camilo": {
+  "StÃºdio para 4 pessoas próx ao Allianz e São Camilo": {
     predio: "Viva Benx",
     apartamento: "apto 502",
     faxineira: "Aniele"
@@ -750,7 +750,7 @@ const mapaImoveisBooking = {
     faxineira: "Aniele"
   },
 
-  "Apartamento em Indianópolis": {
+  "Apartamento em IndianÃ³polis": {
     predio: "Nex One Moema",
     apartamento: "apto 915",
     faxineira: "Aniele"
@@ -3200,7 +3200,7 @@ function criarCard(limpeza) {
   card.innerHTML = `
 <div class="card-top">
   <div class="card-date">
-    📅 ${formatarData(limpeza.data)} -${formatarHora(limpeza.hora)}
+    ðŸ“… ${formatarData(limpeza.data)} -${formatarHora(limpeza.hora)}
   </div>
 
   <div class="origin-badge ${definirClasseOrigem(limpeza.origem)}">
@@ -3722,7 +3722,7 @@ finishSaveBtn.addEventListener("click", () => {
   const semOcorrencias = !limpeza.teveDano && !limpeza.faltouInsumo;
 
   mostrarFeedback({
-    titulo: "Limpeza concluí­da",
+    titulo: "Limpeza concluída",
     mensagem: `
       <p>Registros operacionais atualizados.</p>
       <div class="feedback-summary">
@@ -3763,7 +3763,7 @@ async function salvarLimpezaSheets(limpeza) {
       }
       return data;
     } catch (e) {
-      // resposta não é JSON, mas o POST foi concluído
+    // resposta não é JSON, mas o POST foi concluído
       return null;
     }
   } catch (erro) {
@@ -3930,14 +3930,43 @@ importBtn.addEventListener("click", () => {
     return;
   }
 
+  const nomeArquivo = String(arquivo.name || "").toLowerCase();
+  const ehCsv = nomeArquivo.endsWith(".csv");
+  const ehExcel = nomeArquivo.endsWith(".xls") || nomeArquivo.endsWith(".xlsx");
+
+  if (!ehCsv && !ehExcel) {
+    mostrarFeedback({
+      titulo: "Arquivo inválido",
+      mensagem: "<p>Selecione um arquivo CSV ou Excel do Booking.</p>",
+      tipo: "warning"
+    });
+    return;
+  }
+
+  if (ehExcel && typeof XLSX === "undefined") {
+    mostrarFeedback({
+      titulo: "Erro na leitura",
+      mensagem: "<p>Biblioteca de leitura Excel não carregada.</p>",
+      tipo: "warning"
+    });
+    return;
+  }
+
   setBotaoProcessando(importBtn, true, "Importando...");
 
   const reader = new FileReader();
 
   reader.onload = async function (event) {
-    const csv = event.target.result;
-
     try {
+      let csv = event.target.result;
+
+      if (ehExcel) {
+        const workbook = XLSX.read(event.target.result, { type: "array" });
+        const primeiraAba = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[primeiraAba];
+        csv = XLSX.utils.sheet_to_csv(sheet);
+      }
+
       await processarCSV(csv);
     } finally {
       setBotaoProcessando(importBtn, false);
@@ -3953,24 +3982,77 @@ importBtn.addEventListener("click", () => {
     });
   };
 
-  reader.readAsText(arquivo, "UTF-8");
+  if (ehExcel) {
+    reader.readAsArrayBuffer(arquivo);
+  } else {
+    reader.readAsText(arquivo, "UTF-8");
+  }
 });
 
 async function processarCSV(csv) {
-  const linhas = csv
-    .split("\n")
-    .map((linha) => linha.trim())
-    .filter((linha) => linha.length > 0);
+  const parseCsvBooking = (texto) => {
+    const linhas = [];
+    let linha = [];
+    let campo = "";
+    let dentroAspas = false;
 
-  const cabecalho = linhas[0]
-    .split(",")
-    .map((coluna) => coluna.trim());
+    for (let i = 0; i < texto.length; i++) {
+      const char = texto[i];
+      const proximo = texto[i + 1];
 
+      if (char === '"' && dentroAspas && proximo === '"') {
+        campo += '"';
+        i++;
+        continue;
+      }
+
+      if (char === '"') {
+        dentroAspas = !dentroAspas;
+        continue;
+      }
+
+      if (char === "," && !dentroAspas) {
+        linha.push(campo.trim());
+        campo = "";
+        continue;
+      }
+
+      if ((char === "\n" || char === "\r") && !dentroAspas) {
+        if (char === "\r" && proximo === "\n") i++;
+        linha.push(campo.trim());
+
+        if (linha.some((valor) => valor !== "")) {
+          linhas.push(linha);
+        }
+
+        linha = [];
+        campo = "";
+        continue;
+      }
+
+      campo += char;
+    }
+
+    linha.push(campo.trim());
+
+    if (linha.some((valor) => valor !== "")) {
+      linhas.push(linha);
+    }
+
+    return linhas;
+  };
+
+  const linhas = parseCsvBooking(csv);
+
+  if (!linhas.length) {
+    return;
+  }
+
+  const cabecalho = linhas[0].map((coluna) => coluna.trim());
   const reservas = [];
 
   for (let i = 1; i < linhas.length; i++) {
-    const valores = linhas[i].split(",");
-
+    const valores = linhas[i];
     const reserva = {};
 
     cabecalho.forEach((coluna, index) => {
@@ -3981,11 +4063,73 @@ async function processarCSV(csv) {
   }
 
   console.log("CSV headers:", cabecalho);
+
   const reservasValidas = reservas.filter((reserva) => {
-    return reserva["Type/Transaction type"] === "Reservation";
+    const status = String(reserva["Status"] || "").trim();
+    const statusNormalizado = status.toLowerCase();
+    return statusNormalizado === "ok" || statusNormalizado === "cancelada";
   });
+
   console.log("Reservas válidas (booking):", reservasValidas.length);
 
+  const normalizarTextoChave = (texto) => {
+    return String(texto || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ");
+  };
+
+  const normalizarDataBookingExcel = (data) => {
+    const texto = String(data || "").trim();
+    const dataSistema = normalizarDataSistema(texto, "booking");
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dataSistema)) {
+      return dataSistema;
+    }
+
+    const meses = {
+      janeiro: "01",
+      fevereiro: "02",
+      marco: "03",
+      abril: "04",
+      maio: "05",
+      junho: "06",
+      julho: "07",
+      agosto: "08",
+      setembro: "09",
+      outubro: "10",
+      novembro: "11",
+      dezembro: "12"
+    };
+
+    const match = texto.match(/^(\d{1,2})\s+de\s+([a-zç]+)\s+de\s+(\d{4})$/i);
+
+    if (!match) {
+      return dataSistema;
+    }
+
+    const dia = match[1].padStart(2, "0");
+    const mesTexto = normalizarTextoChave(match[2]);
+    const mes = meses[mesTexto];
+    const ano = match[3];
+
+    if (!mes) {
+      return dataSistema;
+    }
+
+    return `${ano}-${mes}-${dia}`;
+  };
+
+  const buscarDadosImovelBooking = (nomeImovel) => {
+    const nomeNormalizado = normalizarTextoChave(nomeImovel);
+    const chaveEncontrada = Object.keys(mapaImoveisBooking).find((chave) => {
+      return normalizarTextoChave(chave) === nomeNormalizado;
+    });
+
+    return chaveEncontrada ? mapaImoveisBooking[chaveEncontrada] : undefined;
+  };
   const hoje = hojeISO();
 
   let criadas = 0;
@@ -3996,10 +4140,49 @@ async function processarCSV(csv) {
   const detalhesFalhas = [];
   for (let index = 0; index < reservasValidas.length; index++) {
     const reserva = reservasValidas[index];
-    const checkout = normalizarDataSistema(reserva["Check-out date"], "booking");
-    const referencia = reserva["Reference number"];
-    const nomeImovel = reserva["Property name"];
-    const dadosImovel = mapaImoveisBooking[nomeImovel];
+    const statusReserva = String(reserva["Status"] || "").trim();
+    const checkout = normalizarDataBookingExcel(reserva["Saída"]);
+    const referencia = reserva["Número da reserva"];
+    const nomeImovel = String(reserva["Nome da propriedade"] || "").trim();
+    const dadosImovel = buscarDadosImovelBooking(nomeImovel);
+    const pagamentoTotalBooking = converterMoedaCsvParaNumero(reserva["Pagamento total"]);
+    const comissaoBooking = converterMoedaCsvParaNumero(reserva["Comissão"]);
+    const valorEfetivoBooking = pagamentoTotalBooking - comissaoBooking;
+    console.log("BOOKING DEBUG CAMPOS", {
+      statusReserva,
+      referencia,
+      nomeImovel,
+      checkout,
+      pagamentoTotalBooking,
+      comissaoBooking,
+      valorEfetivoBooking,
+      dadosImovel
+    });
+
+    const reservaSheets = {
+      codigoReserva: referencia,
+      origem: "booking",
+      nomeApartamento: nomeImovel,
+      predio: dadosImovel?.predio || "A DEFINIR",
+      apartamento: dadosImovel?.apartamento || "A DEFINIR",
+      hospede: reserva["Nome de quem fez a reserva"] || "",
+      telefone: "",
+      dataEntrada: reserva["Chegada"] || "",
+      dataSaida: reserva["Saída"] || "",
+      dataLimpeza: reserva["Saída"] || "",
+      valorEfetivo: valorEfetivoBooking,
+      valorInfo: pagamentoTotalBooking,
+      statusReserva,
+      dataReserva: reserva["Reservado em"] || "",
+      criadoEm: new Date().toISOString(),
+      atualizadoEm: new Date().toISOString()
+    };
+
+    salvarReservaSheets(reservaSheets);
+
+    if (statusReserva.toLowerCase() === "cancelada") {
+      continue;
+    }
 
     if (!checkout || checkout < hoje) {
       ignoradasHistorico++;
@@ -4045,37 +4228,13 @@ faxineira: dadosImovel?.faxineira || "Aniele",
         salvoFalhas++;
         detalhesFalhas.push(`Booking ${novaLimpeza.referenciaReserva || novaLimpeza.id}: ${result.erro}`);
       } else {
-        const pagamentoTotalBooking = converterMoedaCsvParaNumero(
-          reserva["Pagamento total"] ||
-          reserva["Gross amount"]
-        );
-        const comissaoBooking = converterMoedaCsvParaNumero(
-          reserva["Comissão"] ||
-          reserva["Commission amount"] ||
-          reserva["Commission"]
-        );
-        const valorEfetivoBooking = pagamentoTotalBooking - comissaoBooking;
-
-        const reservaSheets = {
-          codigoReserva: reserva["Número da reserva"] || reserva["Reference number"] || referencia,
-          origem: "booking",
-          nomeApartamento: reserva["Nome da propriedade"] || reserva["Property name"] || nomeImovel,
+        console.log("BOOKING DEBUG GERAR RECEITA", {
+          referenciaReserva: novaLimpeza.referenciaReserva,
+          data: novaLimpeza.data,
           predio: novaLimpeza.predio,
           apartamento: novaLimpeza.apartamento,
-          hospede: reserva["Nome de quem fez a reserva"] || reserva["Guest name"] || "",
-          telefone: reserva["Telefone"] || reserva["Phone number"] || "",
-          dataEntrada: reserva["Chegada"] || reserva["Check-in date"] || "",
-          dataSaida: reserva["Saída"] || reserva["Check-out date"] || "",
-          dataLimpeza: reserva["Saída"] || reserva["Check-out date"] || "",
-          valorEfetivo: valorEfetivoBooking,
-          valorInfo: pagamentoTotalBooking,
-          statusReserva: reserva["Status"] || "",
-          dataReserva: reserva["Reservado em"] || reserva["Booked on"] || "",
-          criadoEm: new Date().toISOString(),
-          atualizadoEm: new Date().toISOString()
-        };
-
-        salvarReservaSheets(reservaSheets);
+          valorEfetivoBooking
+        });
         gerarReceitaPrevistaReserva(
           novaLimpeza,
           "receita_prevista_booking",
@@ -4103,7 +4262,6 @@ faxineira: dadosImovel?.faxineira || "Aniele",
     console.error("Detalhes das falhas (booking):", detalhesFalhas);
   }
 }
-
 /* IMPORTAR AIRBNB */
 
 importAirbnbBtn.addEventListener("click", () => {
@@ -4256,7 +4414,7 @@ async function processarAirbnbCSV(csv) {
       obterCampoAirbnb(reserva, "Código de Confirmação");
 
     const anuncio =
-      obterCampoAirbnb(reserva, "Anúncio");
+      obterCampoAirbnb(reserva, "AnÃºncio");
 
     const dadosImovel =
       mapaImoveisAirbnb[anuncio];  
@@ -4335,9 +4493,9 @@ async function processarAirbnbCSV(csv) {
           nomeApartamento: anuncio,
           predio: novaLimpeza.predio,
           apartamento: novaLimpeza.apartamento,
-          hospede: obterCampoAirbnb(reserva, "Hóspede"),
+          hospede: obterCampoAirbnb(reserva, "Hópede"),
           telefone: "",
-          dataEntrada: obterCampoAirbnb(reserva, "Data de início"),
+          dataEntrada: obterCampoAirbnb(reserva, "Data de inÃ­cio"),
           dataSaida: obterCampoAirbnb(reserva, "Data de término"),
           dataLimpeza: obterCampoAirbnb(reserva, "Data de término"),
           valorEfetivo: valorReceita,
@@ -4614,7 +4772,5 @@ async function carregarLimpezasSheets() {
   }
 
 }
-
-
 
 
