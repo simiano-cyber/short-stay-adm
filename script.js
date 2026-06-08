@@ -817,7 +817,7 @@ const mapaImoveisBooking = {
     faxineira: "Aniele"
   },
 
-  "Apartamento em IndianÃ³polis": {
+  "Apartamento em Indianópolis": {
     predio: "Nex One Moema",
     apartamento: "apto 915",
     faxineira: "Aniele"
@@ -3842,11 +3842,11 @@ cardsContainer.addEventListener("click", (event) => {
   detailApartamento.innerHTML = `${dados.predio} - ${dados.apartamento}`;
 
   detailInfos.innerHTML = `
-    ${formatarData(dados.data)} â€¢
-    ${dados.hora} â€¢
-    ${dados.faxineira} â€¢
-    ${dados.tipoFaxina} â€¢
-    ${dados.qtdHospedes} hÃ³spedes
+    ${formatarData(dados.data)} •
+    ${dados.hora} •
+    ${dados.faxineira} •
+    ${dados.tipoFaxina} •
+    ${dados.qtdHospedes} hóspedes
     <br>
     Reserva: ${dados.referenciaReserva || "-"}
   `;
