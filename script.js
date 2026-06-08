@@ -3378,7 +3378,7 @@ function criarCard(limpeza) {
   card.innerHTML = `
 <div class="card-top">
   <div class="card-date">
-    📅 ${formatarData(limpeza.data)} -${formatarHora(limpeza.hora)}
+    📅 ${formatarData(limpeza.data)} - ${formatarHora(limpeza.hora)}
   </div>
 
   <div class="origin-badge ${definirClasseOrigem(limpeza.origem)}">
@@ -3400,6 +3400,9 @@ function criarCard(limpeza) {
       <div class="card-info">
         <div class="card-person">
           ${limpeza.faxineira}
+        </div>
+        <div class="card-reserva">
+          Reserva: ${limpeza.referenciaReserva || "-"}
         </div>
       </div>
 
@@ -3839,11 +3842,13 @@ cardsContainer.addEventListener("click", (event) => {
   detailApartamento.innerHTML = `${dados.predio} - ${dados.apartamento}`;
 
   detailInfos.innerHTML = `
-    ${formatarData(dados.data)} •
-    ${dados.hora} •
-    ${dados.faxineira} •
-    ${dados.tipoFaxina} •
-    ${dados.qtdHospedes} hóspedes
+    ${formatarData(dados.data)} â€¢
+    ${dados.hora} â€¢
+    ${dados.faxineira} â€¢
+    ${dados.tipoFaxina} â€¢
+    ${dados.qtdHospedes} hÃ³spedes
+    <br>
+    Reserva: ${dados.referenciaReserva || "-"}
   `;
 
   lavagemInput.value = 0;
