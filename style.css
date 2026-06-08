@@ -1529,13 +1529,28 @@ button.is-loading::after {
   margin-bottom: 18px;
 }
 
+.financeiro-filters input,
 .financeiro-filters select {
   width: 100%;
-  padding: 12px;
+  min-height: 52px;
+  padding: 12px 16px;
   border-radius: 12px;
   border: 1px solid rgba(63,162,227,0.25);
   background: white;
   font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  color: #0f2f57;
+  box-sizing: border-box;
+}
+
+#financeiroBusca {
+  background: #fff;
+}
+
+#financeiroBusca:focus {
+  outline: none;
+  border-color: #2f8dcc;
+  box-shadow: 0 0 0 3px rgba(63, 162, 227, 0.12);
 }
 
 .financeiro-btn-secundario,

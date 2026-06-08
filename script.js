@@ -27,6 +27,7 @@ const financeiroFiltroMes = document.getElementById("financeiroFiltroMes");
 const financeiroFiltroPredio = document.getElementById("financeiroFiltroPredio");
 const financeiroFiltroApartamento = document.getElementById("financeiroFiltroApartamento");
 const financeiroFiltroCategoria = document.getElementById("financeiroFiltroCategoria");
+const financeiroBusca = document.getElementById("financeiroBusca");
 const financeiroTotalLancamentos = document.getElementById("financeiroTotalLancamentos");
 const financeiroTotalSaidas = document.getElementById("financeiroTotalSaidas");
 const financeiroTotalEntradas = document.getElementById("financeiroTotalEntradas");
@@ -1191,6 +1192,7 @@ function aplicarFiltrosFinanceiro() {
   const filtroPredio = financeiroFiltroPredio?.value || "";
   const filtroApartamento = financeiroFiltroApartamento?.value || "";
   const filtroCategoria = financeiroFiltroCategoria?.value || "";
+  const busca = String(financeiroBusca?.value || "").trim().toLowerCase();
 
   return fluxoCaixa.filter((item) => {
     const mesItem = String(item.data || "").slice(0, 7);
@@ -1199,6 +1201,17 @@ function aplicarFiltrosFinanceiro() {
     if (filtroPredio && item.predio !== filtroPredio) return false;
     if (filtroApartamento && item.apartamento !== filtroApartamento) return false;
     if (filtroCategoria && item.categoria !== filtroCategoria) return false;
+
+    const camposBusca = [
+      item.descricao,
+      item.categoria,
+      item.referenciaReserva,
+      item.origem,
+      item.predio,
+      item.apartamento
+    ].map((valor) => String(valor || "").toLowerCase());
+
+    if (busca && !camposBusca.some((valor) => valor.includes(busca))) return false;
 
     return true;
   });
@@ -1756,6 +1769,7 @@ function limparFiltrosFinanceiro() {
   if (financeiroFiltroPredio) financeiroFiltroPredio.value = "";
   if (financeiroFiltroApartamento) financeiroFiltroApartamento.value = "";
   if (financeiroFiltroCategoria) financeiroFiltroCategoria.value = "";
+  if (financeiroBusca) financeiroBusca.value = "";
   renderizarFinanceiro();
 }
 
@@ -4790,6 +4804,10 @@ if (logoutBtn) {
     select.addEventListener("change", renderizarFinanceiro);
   }
 });
+
+if (financeiroBusca) {
+  financeiroBusca.addEventListener("input", renderizarFinanceiro);
+}
 
 if (financeiroLimparFiltrosBtn) {
   financeiroLimparFiltrosBtn.addEventListener("click", limparFiltrosFinanceiro);
