@@ -239,6 +239,72 @@ Regra de datas:
 - reservas ap\u00F3s dia 20: fechamento dia 20 do m\u00EAs seguinte e recebimento previsto dia 30 do m\u00EAs seguinte.`
   },
   {
+    categoria: "Financeiro",
+    titulo: "Regras Financeiras e Crit\u00E9rios de C\u00E1lculo",
+    tags: ["financeiro", "comiss\u00E3o", "taxa administrativa", "fluxo de caixa", "reservas", "propriet\u00E1rios"],
+    conteudo: `C\u00F3digo \u00FAnico da reserva:
+Airbnb: C\u00F3digo de Confirma\u00E7\u00E3o.
+Booking: N\u00FAmero da reserva.
+No sistema: codigoReserva / referenciaReserva.
+Esse c\u00F3digo \u00FAnico relaciona Reservas, Limpezas e FluxoCaixa.
+
+Valor Efetivo:
+\u00C9 o valor cont\u00E1bil que entra no raz\u00E3o financeiro.
+Airbnb: Valor Efetivo = Valor.
+Booking: Valor Efetivo = Pagamento total - Comiss\u00E3o.
+
+Valor Informativo:
+\u00C9 usado como refer\u00EAncia gerencial e base futura para comiss\u00E3o.
+Airbnb: Valor Informativo da Reserva = Valor + Taxa de servi\u00E7o.
+Booking: Valor Informativo = Pagamento total.
+No FluxoCaixa, Valor Inf. pode guardar informa\u00E7\u00F5es auxiliares do lan\u00E7amento, como taxa de limpeza no Airbnb.
+
+Comiss\u00E3o administrativa:
+Base de comiss\u00E3o = Valor Informativo.
+Campos usados no cadastro do apartamento: percentualComissao, limiteComissao, percentualComissaoAcimaLimite.
+Regra sem limite: Comiss\u00E3o = Base de comiss\u00E3o x percentualComissao.
+Regra com limite: at\u00E9 o limite usa percentualComissao; acima do limite usa percentualComissaoAcimaLimite.
+Regra pendente de valida\u00E7\u00E3o antes de automatizar totalmente.
+
+Taxa administrativa fixa:
+Cada apartamento pode ter taxaFixaMensal.
+Essa taxa representa receita fixa mensal da Shortstay por apartamento.
+Exemplo: taxaFixaMensal = R$ 150.
+
+Custos de limpeza:
+Ao concluir limpeza o sistema usa os custos cadastrados no apartamento: custoLimpeza, custoLavagem e custoSecagem.
+Quando a limpeza \u00E9 conclu\u00EDda:
+- busca o apartamento
+- busca os custos
+- gera sa\u00EDdas no FluxoCaixa
+- vincula os lan\u00E7amentos com referenciaLimpeza e referenciaReserva
+
+Reservas canceladas:
+Status OK:
+- salva reserva
+- cria limpeza
+- gera receita prevista
+Status Cancelada:
+- salva/atualiza reserva
+- n\u00E3o cria nova limpeza
+- n\u00E3o gera nova receita prevista
+Regra futura:
+- cancelar limpeza pendente
+- cancelar ou remover receita prevista
+- preservar hist\u00F3rico
+
+Pontos pendentes de valida\u00E7\u00E3o:
+- De-Para correto entre an\u00FAncios e apartamentos reais
+- Nome do propriet\u00E1rio
+- Faxineira padr\u00E3o
+- Custos reais
+- Percentual de comiss\u00E3o
+- Limite de comiss\u00E3o
+- Percentual acima do limite
+- Regra final para cancelamentos
+- Regra final para repasse aos propriet\u00E1rios`
+  },
+  {
     categoria: "CSV Airbnb",
     titulo: "De-Para de campos \u2014 Airbnb",
     tags: ["airbnb", "csv", "de-para", "campos"],
@@ -836,8 +902,35 @@ function converterMoedaCsvParaNumero(valor) {
   return Number.isFinite(numero) ? numero : 0;
 }
 
-function calcularDatasReceitaPrevista(dataCompetencia) {
-  const competenciaNormalizada = normalizarDataSistema(dataCompetencia);
+function adicionarDiasISO(dataISO, dias) {
+  const dataNormalizada = normalizarDataSistema(dataISO);
+  if (!dataNormalizada || !Number.isFinite(Number(dias))) return "";
+
+  const [ano, mes, dia] = dataNormalizada.split("-").map(Number);
+  const data = new Date(ano, mes - 1, dia);
+  data.setDate(data.getDate() + Number(dias));
+
+  const anoFinal = data.getFullYear();
+  const mesFinal = String(data.getMonth() + 1).padStart(2, "0");
+  const diaFinal = String(data.getDate()).padStart(2, "0");
+  return `${anoFinal}-${mesFinal}-${diaFinal}`;
+}
+
+function primeiroDiaMesSeguinteISO(dataISO) {
+  const dataNormalizada = normalizarDataSistema(dataISO);
+  if (!dataNormalizada) return "";
+
+  const [ano, mes] = dataNormalizada.split("-").map(Number);
+  const data = new Date(ano, mes - 1, 1);
+  data.setMonth(data.getMonth() + 1);
+
+  const anoFinal = data.getFullYear();
+  const mesFinal = String(data.getMonth() + 1).padStart(2, "0");
+  return `${anoFinal}-${mesFinal}-01`;
+}
+
+function calcularDatasReceitaPrevista(dataBase, origem, dataEntrada = "") {
+  const competenciaNormalizada = normalizarDataSistema(dataBase);
   if (!competenciaNormalizada) {
     return {
       dataCompetencia: "",
@@ -846,42 +939,22 @@ function calcularDatasReceitaPrevista(dataCompetencia) {
     };
   }
 
-  const [anoTexto, mesTexto, diaTexto] = competenciaNormalizada.split("-");
-  const ano = Number(anoTexto);
-  const mes = Number(mesTexto);
-  const dia = Number(diaTexto);
+  let dataRecebimentoPrevisto = "";
 
-  if (!ano || !mes || !dia) {
-    return {
-      dataCompetencia: "",
-      dataFechamento: "",
-      dataRecebimentoPrevisto: ""
-    };
+  if (origem === "receita_prevista_airbnb") {
+    dataRecebimentoPrevisto = adicionarDiasISO(dataEntrada || dataBase, 1);
+  } else if (origem === "receita_prevista_booking") {
+    dataRecebimentoPrevisto = primeiroDiaMesSeguinteISO(dataBase);
   }
-
-  let anoRef = ano;
-  let mesRef = mes;
-
-  if (dia >= 21) {
-    mesRef += 1;
-    if (mesRef > 12) {
-      mesRef = 1;
-      anoRef += 1;
-    }
-  }
-
-  const mm = String(mesRef).padStart(2, "0");
-  const dataFechamento = `${anoRef}-${mm}-20`;
-  const dataRecebimentoPrevisto = `${anoRef}-${mm}-30`;
 
   return {
     dataCompetencia: competenciaNormalizada,
-    dataFechamento,
+    dataFechamento: "",
     dataRecebimentoPrevisto
   };
 }
 
-function gerarReceitaPrevistaReserva(limpeza, origem, valorReceita, valorInfo = 0) {
+function gerarReceitaPrevistaReserva(limpeza, origem, valorReceita, valorInfo = 0, datasReserva = {}) {
   const valorNumerico = Number(valorReceita);
 
   if (!limpeza || !limpeza.referenciaReserva || !valorNumerico || !Number.isFinite(valorNumerico)) return;
@@ -889,7 +962,9 @@ function gerarReceitaPrevistaReserva(limpeza, origem, valorReceita, valorInfo = 
   const valorFinal = Math.abs(valorNumerico);
   if (valorFinal <= 0) return;
 
-  const datas = calcularDatasReceitaPrevista(limpeza.data);
+  const dataEntrada = datasReserva?.dataEntrada || "";
+  const dataSaida = datasReserva?.dataSaida || limpeza.data;
+  const datas = calcularDatasReceitaPrevista(dataSaida, origem, dataEntrada);
   if (!datas.dataRecebimentoPrevisto) return;
 
   fluxoCaixa = fluxoCaixa.filter((lancamento) => {
@@ -1014,6 +1089,7 @@ function gerarLancamentosFinanceirosLimpeza(limpeza) {
       valor: valorTotal,
       origem: "finalizacao_limpeza",
       referenciaLimpeza: limpeza.id,
+      referenciaReserva: limpeza.referenciaReserva || "",
       criadoEm: new Date().toISOString()
     };
   };
@@ -2902,6 +2978,59 @@ function amanhaISO() {
   return dataLocalISO(data);
 }
 
+function normalizarDataAirbnb(data) {
+  const texto = String(data || "").trim();
+  const match = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+  if (!match) return texto;
+
+  const mes = match[1].padStart(2, "0");
+  const dia = match[2].padStart(2, "0");
+  const ano = match[3];
+
+  return `${ano}-${mes}-${dia}`;
+}
+
+function normalizarDataBooking(data) {
+  const texto = String(data || "").trim();
+
+  const normalizarTextoChave = (valor) => {
+    return String(valor || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ");
+  };
+
+  const meses = {
+    janeiro: "01",
+    fevereiro: "02",
+    marco: "03",
+    abril: "04",
+    maio: "05",
+    junho: "06",
+    julho: "07",
+    agosto: "08",
+    setembro: "09",
+    outubro: "10",
+    novembro: "11",
+    dezembro: "12"
+  };
+
+  const match = texto.match(/^(\d{1,2})\s+de\s+([a-zç]+)\s+de\s+(\d{4})$/i);
+  if (!match) return texto;
+
+  const dia = match[1].padStart(2, "0");
+  const mesTexto = normalizarTextoChave(match[2]);
+  const mes = meses[mesTexto];
+  const ano = match[3];
+
+  if (!mes) return texto;
+
+  return `${ano}-${mes}-${dia}`;
+}
+
 function normalizarDataSistema(data, origem) {
   if (!data) return "";
 
@@ -2919,6 +3048,16 @@ function normalizarDataSistema(data, origem) {
     }
   }
 
+  if (origem === "airbnb") {
+    const dataAirbnb = normalizarDataAirbnb(texto);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dataAirbnb)) return dataAirbnb;
+  }
+
+  if (origem === "booking") {
+    const dataBooking = normalizarDataBooking(texto);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dataBooking)) return dataBooking;
+  }
+
   if (texto.includes("/")) {
     const partes = texto.split("/");
     const mes = partes[0].padStart(2, "0");
@@ -2931,6 +3070,31 @@ function normalizarDataSistema(data, origem) {
   }
 
   return texto;
+}
+
+function normalizarHoraSistema(valor) {
+  if (!valor) return "12:00";
+
+  const texto = String(valor).trim();
+
+  const matchHora = texto.match(/^(\d{1,2}):(\d{2})$/);
+  if (matchHora) {
+    return `${matchHora[1].padStart(2, "0")}:${matchHora[2]}`;
+  }
+
+  if (texto.includes("T")) {
+    const iso = texto.match(/T(\d{2}):(\d{2})/);
+    if (iso) {
+      return `${iso[1]}:${iso[2]}`;
+    }
+  }
+
+  const horaNum = parseInt(texto, 10);
+  if (!Number.isNaN(horaNum) && horaNum >= 0 && horaNum < 24) {
+    return `${String(horaNum).padStart(2, "0")}:00`;
+  }
+
+  return "12:00";
 }
 
 function formatarData(data) {
@@ -3703,10 +3867,12 @@ finishSaveBtn.addEventListener("click", () => {
     document.querySelectorAll("#insumosBox input[type='checkbox']:checked")
   ).map((item) => item.value);
   limpeza.concluidoEm = new Date().toISOString();
+  limpeza.referenciaReserva = limpeza.referenciaReserva || "";
 
   finishModal.style.display = "none";
   cardAtual = null;
   const lancamentos = gerarLancamentosFinanceirosLimpeza(limpeza);
+  salvarLocalStorage();
   salvarFluxoCaixaLocalStorage();
   lancamentos.forEach((lancamento) => {
     salvarFluxoCaixaSheets(lancamento);
@@ -4159,6 +4325,10 @@ async function processarCSV(csv) {
       dadosImovel
     });
 
+    const dataEntradaBooking = normalizarDataSistema(reserva["Chegada"], "booking");
+    const dataSaidaBooking = normalizarDataSistema(reserva["Saída"], "booking");
+    const dataReservaBooking = normalizarDataSistema(reserva["Reservado em"], "booking");
+
     const reservaSheets = {
       codigoReserva: referencia,
       origem: "booking",
@@ -4167,13 +4337,13 @@ async function processarCSV(csv) {
       apartamento: dadosImovel?.apartamento || "A DEFINIR",
       hospede: reserva["Nome de quem fez a reserva"] || "",
       telefone: "",
-      dataEntrada: reserva["Chegada"] || "",
-      dataSaida: reserva["Saída"] || "",
-      dataLimpeza: reserva["Saída"] || "",
+      dataEntrada: dataEntradaBooking,
+      dataSaida: dataSaidaBooking,
+      dataLimpeza: dataSaidaBooking,
       valorEfetivo: valorEfetivoBooking,
       valorInfo: pagamentoTotalBooking,
       statusReserva,
-      dataReserva: reserva["Reservado em"] || "",
+      dataReserva: dataReservaBooking,
       criadoEm: new Date().toISOString(),
       atualizadoEm: new Date().toISOString()
     };
@@ -4238,7 +4408,11 @@ faxineira: dadosImovel?.faxineira || "Aniele",
         gerarReceitaPrevistaReserva(
           novaLimpeza,
           "receita_prevista_booking",
-          valorEfetivoBooking
+          valorEfetivoBooking,
+          0,
+          {
+            dataSaida: checkout
+          }
         );
       }
 
@@ -4485,7 +4659,11 @@ async function processarAirbnbCSV(csv) {
       } else {
         const valorReceita = converterMoedaCsvParaNumero(obterCampoAirbnb(reserva, "Valor"));
         const valorInfo = converterMoedaCsvParaNumero(obterCampoAirbnb(reserva, "Taxa de limpeza"));
-        const taxaServico = converterMoedaCsvParaNumero(obterCampoAirbnb(reserva, "Taxa de serviço"));
+        const taxaServico = converterMoedaCsvParaNumero(obterCampoAirbnb(reserva, "Taxa de serviÃ§o"));
+
+        const dataEntradaAirbnb = normalizarDataSistema(obterCampoAirbnb(reserva, "Data de início"), "airbnb");
+        const dataSaidaAirbnb = normalizarDataSistema(obterCampoAirbnb(reserva, "Data de término"), "airbnb");
+        const dataReservaAirbnb = normalizarDataSistema(obterCampoAirbnb(reserva, "Data da reserva"), "airbnb");
 
         const reservaSheets = {
           codigoReserva: referencia,
@@ -4493,15 +4671,15 @@ async function processarAirbnbCSV(csv) {
           nomeApartamento: anuncio,
           predio: novaLimpeza.predio,
           apartamento: novaLimpeza.apartamento,
-          hospede: obterCampoAirbnb(reserva, "Hópede"),
+          hospede: obterCampoAirbnb(reserva, "Hóspede"),
           telefone: "",
-          dataEntrada: obterCampoAirbnb(reserva, "Data de inÃ­cio"),
-          dataSaida: obterCampoAirbnb(reserva, "Data de término"),
-          dataLimpeza: obterCampoAirbnb(reserva, "Data de término"),
+          dataEntrada: dataEntradaAirbnb,
+          dataSaida: dataSaidaAirbnb,
+          dataLimpeza: dataSaidaAirbnb,
           valorEfetivo: valorReceita,
           valorInfo: valorReceita + taxaServico,
           statusReserva: obterCampoAirbnb(reserva, "Tipo"),
-          dataReserva: obterCampoAirbnb(reserva, "Data da reserva"),
+          dataReserva: dataReservaAirbnb,
           criadoEm: new Date().toISOString(),
           atualizadoEm: new Date().toISOString()
         };
@@ -4512,7 +4690,11 @@ async function processarAirbnbCSV(csv) {
           novaLimpeza,
           "receita_prevista_airbnb",
           valorReceita,
-          valorInfo
+          valorInfo,
+          {
+            dataEntrada: obterCampoAirbnb(reserva, "Data de in\u00EDcio"),
+            dataSaida: obterCampoAirbnb(reserva, "Data de t\u00E9rmino")
+          }
         );
       }
 
@@ -4539,21 +4721,7 @@ async function processarAirbnbCSV(csv) {
 }
 
 function normalizarHora(hora) {
-  if (!hora) return "12:00";
-
-  const texto = String(hora).trim();
-
-  const match = texto.match(/^(\d{1,2}):(\d{2})$/);
-  if (match) {
-    return `${match[1].padStart(2, "0")}:${match[2]}`;
-  }
-
-  const horaNum = parseInt(texto);
-  if (!Number.isNaN(horaNum) && horaNum >= 0 && horaNum < 24) {
-    return `${String(horaNum).padStart(2, "0")}:00`;
-  }
-
-  return "12:00";
+  return normalizarHoraSistema(hora);
 }
 
 /* INICIAR SISTEMA */
@@ -4739,6 +4907,9 @@ async function carregarLimpezasSheets() {
 
       data:
         normalizarDataSistema(item.data, item.origem),
+
+      hora:
+        normalizarHoraSistema(item?.hora),
 
       qtdHospedes:
         Number(item.qtdHospedes) || 0,
