@@ -160,6 +160,9 @@ const feedbackIcon = document.getElementById("feedbackIcon");
 const feedbackTitle = document.getElementById("feedbackTitle");
 const feedbackMessage = document.getElementById("feedbackMessage");
 const feedbackOkBtn = document.getElementById("feedbackOkBtn");
+const confirmDeleteModal = document.getElementById("confirmDeleteModal");
+const confirmDeleteNoBtn = document.getElementById("confirmDeleteNoBtn");
+const confirmDeleteYesBtn = document.getElementById("confirmDeleteYesBtn");
 
 const csvFileInput = document.getElementById("csvFileInput");
 const importBtn = document.querySelector(".import-btn");
@@ -182,6 +185,7 @@ let reservas = [];
 let mapaAnunciosSheets = [];
 let financeiroOrdenacaoData = "desc";
 let financeiroLancamentoEditandoId = null;
+let confirmDeleteLoadingInterval = null;
 let contadorLimpezas = 1;
 let periodoAtual = "today";
 const periodosHistorico = {
@@ -1667,9 +1671,14 @@ function renderizarFinanceiro() {
             <span data-label="Natureza">${natureza}</span>
             <span data-label="Origem"><small class="financeiro-origem-badge">${origemMarcador}</small></span>
             <span data-label="Ações">
-              <button type="button" class="financeiro-edit-btn" data-financeiro-edit-id="${item.id}">
-                Editar
-              </button>
+              <span class="financeiro-action-buttons">
+                <button type="button" class="financeiro-edit-btn" data-financeiro-edit-id="${item.id}" aria-label="Editar lançamento" title="Editar lançamento">
+                  ✎
+                </button>
+                <button type="button" class="financeiro-delete-btn" data-financeiro-delete-id="${item.id}" aria-label="Excluir lançamento" title="Excluir lançamento">
+                  ×
+                </button>
+              </span>
             </span>
           </div>
         </article>
@@ -2340,6 +2349,121 @@ async function atualizarFluxoCaixaSheets(item) {
     console.error("Erro ao atualizar fluxoCaixa no Sheets:", erro);
     return false;
   }
+}
+async function excluirFluxoCaixaSheets(itemId) {
+  if (!itemId) return false;
+
+  try {
+    const resposta = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      mode: "cors",
+      body: JSON.stringify({
+        action: "excluirFluxoCaixa",
+        id: itemId
+      })
+    });
+
+    if (!resposta.ok) {
+      console.error("Erro ao excluir fluxoCaixa no Sheets:", resposta.statusText);
+      return false;
+    }
+
+    const data = await resposta.json().catch(() => ({}));
+
+    if (data?.sucesso === false) {
+      console.error("Erro ao excluir fluxoCaixa no Sheets:", data?.erro || "Resposta inválida");
+      return false;
+    }
+
+    return true;
+  } catch (erro) {
+    console.error("Erro ao excluir fluxoCaixa no Sheets:", erro);
+    return false;
+  }
+}
+
+async function excluirLancamentoFinanceiro(lancamento) {
+  if (!lancamento?.id) return;
+
+  const confirmarExclusao = await abrirConfirmacaoExclusao();
+  if (!confirmarExclusao) return;
+
+  setConfirmDeleteLoading(true);
+  const excluidoSheets = await excluirFluxoCaixaSheets(lancamento.id);
+  setConfirmDeleteLoading(false);
+  fecharConfirmacaoExclusao();
+
+  if (!excluidoSheets) {
+    mostrarFeedback({
+      titulo: "Erro ao excluir",
+      mensagem: "<p>Não foi possível excluir o lançamento no Sheets.</p>",
+      tipo: "warning"
+    });
+    return;
+  }
+
+  fluxoCaixa = fluxoCaixa.filter((item) => item.id !== lancamento.id);
+  salvarFluxoCaixaLocalStorage();
+  renderizarFinanceiro();
+
+  mostrarFeedback({
+    titulo: "Tudo certo",
+    mensagem: "<p>Lançamento financeiro excluído.</p>"
+  });
+}
+
+function abrirConfirmacaoExclusao() {
+  return new Promise((resolve) => {
+    if (!confirmDeleteModal || !confirmDeleteNoBtn || !confirmDeleteYesBtn) {
+      resolve(false);
+      return;
+    }
+
+    confirmDeleteModal.style.display = "flex";
+
+    const finalizar = (resultado) => {
+      confirmDeleteNoBtn.removeEventListener("click", onNo);
+      confirmDeleteYesBtn.removeEventListener("click", onYes);
+      resolve(resultado);
+    };
+
+    const onNo = () => finalizar(false);
+    const onYes = () => finalizar(true);
+
+    confirmDeleteNoBtn.addEventListener("click", onNo);
+    confirmDeleteYesBtn.addEventListener("click", onYes);
+  });
+}
+
+function fecharConfirmacaoExclusao() {
+  if (!confirmDeleteModal) return;
+  confirmDeleteModal.style.display = "none";
+}
+
+function setConfirmDeleteLoading(processando) {
+  if (!confirmDeleteYesBtn || !confirmDeleteNoBtn) return;
+
+  if (confirmDeleteLoadingInterval) {
+    clearInterval(confirmDeleteLoadingInterval);
+    confirmDeleteLoadingInterval = null;
+  }
+
+  if (!processando) {
+    confirmDeleteYesBtn.textContent = "Sim";
+    confirmDeleteYesBtn.disabled = false;
+    confirmDeleteNoBtn.disabled = false;
+    return;
+  }
+
+  let etapa = 0;
+  confirmDeleteYesBtn.disabled = true;
+  confirmDeleteNoBtn.disabled = true;
+  confirmDeleteYesBtn.textContent = "Excluindo";
+
+  confirmDeleteLoadingInterval = setInterval(() => {
+    etapa = (etapa + 1) % 4;
+    confirmDeleteYesBtn.textContent = `Excluindo${".".repeat(etapa)}`;
+  }, 350);
 }
 async function salvarReservaSheets(reserva) {
   if (!reserva) return false;
@@ -5185,6 +5309,23 @@ if (financeiroSalvarBtn) {
 
 if (financeiroList) {
   financeiroList.addEventListener("click", (event) => {
+    const botaoExcluir = event.target.closest("[data-financeiro-delete-id]");
+    if (botaoExcluir) {
+      const lancamento = fluxoCaixa.find((item) => item.id === botaoExcluir.dataset.financeiroDeleteId);
+
+      if (!lancamento) {
+        mostrarFeedback({
+          titulo: "Lançamento não encontrado",
+          mensagem: "<p>Não foi possível localizar o lançamento selecionado.</p>",
+          tipo: "warning"
+        });
+        return;
+      }
+
+      excluirLancamentoFinanceiro(lancamento);
+      return;
+    }
+
     const botaoEditar = event.target.closest("[data-financeiro-edit-id]");
     if (!botaoEditar) return;
 
@@ -5279,4 +5420,3 @@ async function carregarLimpezasSheets() {
   }
 
 }
-
