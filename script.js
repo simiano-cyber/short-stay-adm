@@ -177,6 +177,7 @@ let cardAtual = null;
 let limpezas = [];
 let fluxoCaixa = [];
 let reservas = [];
+let mapaAnunciosSheets = [];
 let financeiroOrdenacaoData = "desc";
 let contadorLimpezas = 1;
 let periodoAtual = "today";
@@ -1931,6 +1932,22 @@ async function listarApartamentosSheets() {
   }
 }
 
+async function listarMapaAnunciosSheets() {
+  try {
+    const resposta = await fetch(`${GOOGLE_SCRIPT_URL}?action=listarMapaAnuncios`);
+    const data = await resposta.json();
+
+    if (!resposta.ok) return [];
+
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.mapaAnuncios)) return data.mapaAnuncios;
+    return [];
+  } catch (erro) {
+    console.error("Erro ao listar mapa de an\u00FAncios no Sheets:", erro);
+    return [];
+  }
+}
+
 function normalizarApartamentoSheets(item) {
   const toNumber = (valor, fallback = 0) => {
     if (valor === undefined || valor === null || valor === "") return fallback;
@@ -1982,6 +1999,27 @@ function normalizarApartamentoSheets(item) {
   };
 }
 
+function normalizarMapaAnuncioSheets(item) {
+  const toBool = (valor, fallback = true) => {
+    if (typeof valor === "boolean") return valor;
+    if (valor === undefined || valor === null || valor === "") return fallback;
+    const texto = String(valor).trim().toLowerCase();
+    if (["true", "1", "sim", "yes"].includes(texto)) return true;
+    if (["false", "0", "nao", "n\u00E3o", "no"].includes(texto)) return false;
+    return fallback;
+  };
+
+  return {
+    origem: normalizarTextoChave(item?.origem),
+    nomeAnuncio: String(item?.nomeAnuncio || "").trim(),
+    nomeAnuncioChave: normalizarTextoChave(item?.nomeAnuncio),
+    predio: String(item?.predio || "").trim(),
+    apartamento: String(item?.apartamento || "").trim(),
+    ativo: toBool(item?.ativo, true),
+    observacoes: String(item?.observacoes || "").trim()
+  };
+}
+
 async function sincronizarApartamentosDoSheets() {
   const listaSheets = await listarApartamentosSheets();
   if (!Array.isArray(listaSheets) || !listaSheets.length) return;
@@ -2005,6 +2043,60 @@ async function sincronizarApartamentosDoSheets() {
 
   salvarCustosApartamentosLocalStorage();
   renderizarApartamentos();
+}
+
+async function sincronizarMapaAnunciosDoSheets() {
+  const listaSheets = await listarMapaAnunciosSheets();
+
+  mapaAnunciosSheets = (Array.isArray(listaSheets) ? listaSheets : [])
+    .map(normalizarMapaAnuncioSheets)
+    .filter((item) => item.origem && item.nomeAnuncioChave);
+}
+
+function buscarImovelMapaFixo(origem, nomeAnuncio) {
+  const origemNormalizada = normalizarTextoChave(origem);
+  const nomeChave = normalizarTextoChave(nomeAnuncio);
+
+  if (origemNormalizada === "airbnb") {
+    const chaveEncontrada = Object.keys(mapaImoveisAirbnb).find((chave) => {
+      return normalizarTextoChave(chave) === nomeChave;
+    });
+
+    return chaveEncontrada ? mapaImoveisAirbnb[chaveEncontrada] : undefined;
+  }
+
+  if (origemNormalizada === "booking") {
+    const chaveEncontrada = Object.keys(mapaImoveisBooking).find((chave) => {
+      return normalizarTextoChave(chave) === nomeChave;
+    });
+
+    return chaveEncontrada ? mapaImoveisBooking[chaveEncontrada] : undefined;
+  }
+
+  return undefined;
+}
+
+function buscarImovelPorAnuncio(origem, nomeAnuncio) {
+  const origemNormalizada = normalizarTextoChave(origem);
+  const nomeChave = normalizarTextoChave(nomeAnuncio);
+
+  const encontradoSheets = mapaAnunciosSheets.find((item) => {
+    return item.ativo === true &&
+      item.origem === origemNormalizada &&
+      item.nomeAnuncioChave === nomeChave;
+  });
+
+  if (encontradoSheets) {
+    return {
+      predio: encontradoSheets.predio,
+      apartamento: encontradoSheets.apartamento
+    };
+  }
+
+  const fallbackMapaFixo = buscarImovelMapaFixo(origemNormalizada, nomeAnuncio);
+  if (fallbackMapaFixo) return fallbackMapaFixo;
+
+  return undefined;
 }
 
 async function salvarFluxoCaixaSheets(item) {
@@ -3005,17 +3097,17 @@ function normalizarDataAirbnb(data) {
   return `${ano}-${mes}-${dia}`;
 }
 
+function normalizarTextoChave(valor) {
+  return String(valor || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
+
 function normalizarDataBooking(data) {
   const texto = String(data || "").trim();
-
-  const normalizarTextoChave = (valor) => {
-    return String(valor || "")
-      .trim()
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, " ");
-  };
 
   const meses = {
     janeiro: "01",
@@ -4329,7 +4421,7 @@ async function processarCSV(csv) {
     const checkout = normalizarDataBookingExcel(reserva["Saída"]);
     const referencia = reserva["Número da reserva"];
     const nomeImovel = String(reserva["Nome da propriedade"] || "").trim();
-    const dadosImovel = buscarDadosImovelBooking(nomeImovel);
+    const dadosImovel = buscarImovelPorAnuncio("booking", nomeImovel);
     const pagamentoTotalBooking = converterMoedaCsvParaNumero(reserva["Pagamento total"]);
     const comissaoBooking = converterMoedaCsvParaNumero(reserva["Comissão"]);
     const valorEfetivoBooking = pagamentoTotalBooking - comissaoBooking;
@@ -4610,7 +4702,7 @@ async function processarAirbnbCSV(csv) {
       obterCampoAirbnb(reserva, "AnÃºncio");
 
     const dadosImovel =
-      mapaImoveisAirbnb[anuncio];  
+      buscarImovelPorAnuncio("airbnb", anuncio);  
 
     if (!checkout || checkout < hoje) {
       ignoradasHistorico++;
@@ -4753,6 +4845,7 @@ function iniciarSistema() {
   carregarLimpezasSheets();
   carregarCustosApartamentosLocalStorage();
   sincronizarApartamentosDoSheets();
+  sincronizarMapaAnunciosDoSheets();
   carregarFluxoCaixaLocalStorage();
   sincronizarFluxoCaixaDoSheets();
   sincronizarReservasDoSheets();
