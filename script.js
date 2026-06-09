@@ -36,6 +36,7 @@ const financeiroLimparFiltrosBtn = document.getElementById("financeiroLimparFilt
 const financeiroNovoLancamentoBtn = document.getElementById("financeiroNovoLancamentoBtn");
 const financeiroModal = document.getElementById("financeiroModal");
 const closeFinanceiroModal = document.querySelector(".close-financeiro-modal");
+const financeiroModalTitulo = document.getElementById("financeiroModalTitulo");
 const financeiroTipoInput = document.getElementById("financeiroTipoInput");
 const financeiroCategoriaInput = document.getElementById("financeiroCategoriaInput");
 const financeiroDescricaoInput = document.getElementById("financeiroDescricaoInput");
@@ -64,6 +65,7 @@ financeiroValorUnitarioInput?.addEventListener("input", (e) => {
 
 const financeiroDataInput = document.getElementById("financeiroDataInput");
 const financeiroTotalPreview = document.getElementById("financeiroTotalPreview");
+const financeiroAvisoEdicao = document.getElementById("financeiroAvisoEdicao");
 const financeiroCancelBtn = document.getElementById("financeiroCancelBtn");
 const financeiroSalvarBtn = document.getElementById("financeiroSalvarBtn");
 const relatoriosMesCompetencia = document.getElementById("relatoriosMesCompetencia");
@@ -179,6 +181,7 @@ let fluxoCaixa = [];
 let reservas = [];
 let mapaAnunciosSheets = [];
 let financeiroOrdenacaoData = "desc";
+let financeiroLancamentoEditandoId = null;
 let contadorLimpezas = 1;
 let periodoAtual = "today";
 const periodosHistorico = {
@@ -675,52 +678,52 @@ const filaSheetsLocal = new FilaSheets();
 
 
   const mapaImoveisAirbnb = {
-  "StÃºdio em Perdizes para 5 pessoas próx ao Allianz": {
+  "Stúdio em Perdizes para 5 pessoas próx ao Allianz": {
     predio: "Bracon Perdizes",
     apartamento: "apto 86",
     faxineira: "Aniele"
   },
-  "StÃºdio em Perdizes próx do Allianz Park cama Queen": {
+  "Stúdio em Perdizes próx do Allianz Park cama Queen": {
     predio: "Essential Perdizes",
     apartamento: "apto 401",
     faxineira: "Aniele"
   },
-  "Studio AcessÃ­vel PCD na Vila Mariana 100% Adaptado": {
+  "Studio Acessível PCD na Vila Mariana 100% Adaptado": {
     predio: "Haus Mitre",
     apartamento: "apto 709",
     faxineira: "Thais"
   },
-  "StÃºdio no Brooklin 2 camas próx Berrini Aeroporto": {
+  "Stúdio no Brooklin 2 camas próx Berrini Aeroporto": {
     predio: "Level",
     apartamento: "apto 1811",
     faxineira: "Aniele"
   },
-  "StÃºdio no Brooklin 2 camas próx Aeroporto Berrini": {
+  "Stúdio no Brooklin 2 camas próx Aeroporto Berrini": {
     predio: "Level",
     apartamento: "apto 1316",
     faxineira: "Thais"
   },
-  "StÃºdio Brooklin 4 pessoas próximo Berrini Morumbi": {
+  "Stúdio Brooklin 4 pessoas próximo Berrini Morumbi": {
     predio: "Level",
     apartamento: "apto 1516",
     faxineira: "Thais"
   },
-  "StÃºdio moderno Campo Belo próx. Aeroporto e MetrÃ´": {
+  "Stúdio moderno Campo Belo próx. Aeroporto e Metrô": {
     predio: "Movi Campo Belo",
     apartamento: "apto 2208",
     faxineira: "Aniele"
   },
-  "Studio 2 camas Campo Belo próx MetrÃ´ e Aeroporto": {
+  "Studio 2 camas Campo Belo próx Metrô e Aeroporto": {
     predio: "Movi Campo Belo",
     apartamento: "apto 1702",
     faxineira: "Aniele"
   },
-  "Studio Moderno Campo Belo próx Aeroporto e MetrÃ´": {
+  "Studio Moderno Campo Belo próx Aeroporto e Metrô": {
     predio: "Movi Campo Belo",
     apartamento: "apto 505",
     faxineira: "Aniele"
   },
-  "Studio moderno Campo Belo próx MetrÃ´ e Aeroporto": {
+  "Studio moderno Campo Belo próx Metrô e Aeroporto": {
     predio: "Movi Campo Belo",
     apartamento: "apto 2008",
     faxineira: "Aniele"
@@ -750,22 +753,22 @@ const filaSheetsLocal = new FilaSheets();
     apartamento: "apto 915",
     faxineira: "Aniele"
   },
-  "StÃºdio lindo para 4 pessoas a 500m do Allianz Park": {
+  "Stúdio lindo para 4 pessoas a 500m do Allianz Park": {
     predio: "Smart Bourbon",
     apartamento: "apto 1010",
     faxineira: "Aniele"
   },
-  "StÃºdio moderno em Perdizes perto do Allianz Park": {
+  "Stúdio moderno em Perdizes perto do Allianz Park": {
     predio: "Smart Bourbon",
     apartamento: "apto 1405",
     faxineira: "Aniele"
   },
-  "StÃºdio moderno para 4 pessoas próx. Allianz Park": {
+  "Stúdio moderno para 4 pessoas próx. Allianz Park": {
     predio: "Smart Bourbon",
     apartamento: "apto 404",
     faxineira: "Aniele"
   },
-  "StÃºdio para 4 pessoas próx ao Allianz e São Camilo": {
+  "Stúdio para 4 pessoas próx ao Allianz e São Camilo": {
     predio: "Viva Benx",
     apartamento: "apto 502",
     faxineira: "Aniele"
@@ -1388,6 +1391,23 @@ function atualizarResumoFinanceiro(lancamentos) {
   if (financeiroTotalSaidas) financeiroTotalSaidas.textContent = formatarMoeda(Math.abs(saidas));
   if (financeiroTotalEntradas) financeiroTotalEntradas.textContent = formatarMoeda(entradas);
   if (financeiroResultado) financeiroResultado.textContent = formatarMoeda(resultado);
+
+  const cardSaidas = financeiroTotalSaidas?.closest(".financeiro-card");
+  const cardEntradas = financeiroTotalEntradas?.closest(".financeiro-card");
+  const cardResultado = financeiroResultado?.closest(".financeiro-card");
+
+  if (cardSaidas) {
+    cardSaidas.classList.add("financeiro-card-saidas");
+  }
+
+  if (cardEntradas) {
+    cardEntradas.classList.add("financeiro-card-entradas");
+  }
+
+  if (cardResultado) {
+    cardResultado.classList.toggle("financeiro-card-resultado-positivo", resultado >= 0);
+    cardResultado.classList.toggle("financeiro-card-resultado-negativo", resultado < 0);
+  }
 }
 
 function formatarCategoriaVisual(categoria) {
@@ -1629,6 +1649,7 @@ function renderizarFinanceiro() {
       const apartamentoVisual = String(item.apartamento || "-").replace(/^apto\s+/i, "");
       const natureza = valor > 0 ? "C" : valor < 0 ? "D" : "-";
       const origemMarcador = item.origem === "manual" ? "M" : "A";
+      const classeValorEfetivo = item.tipo === "saida" ? "valor-debito" : "valor-credito";
 
       return `
         <article class="financeiro-item">
@@ -1640,11 +1661,16 @@ function renderizarFinanceiro() {
             <span data-label="Apto.">${apartamentoVisual}</span>
             <span data-label="Qtd">${item.quantidade ?? "-"}</span>
             <span data-label="Valor unit.">${formatarMoeda(item.valorUnitario || 0)}</span>
-            <span data-label="Valor Efetivo" class="financeiro-valor ${valor < 0 ? "valor-saida" : "valor-entrada"}">${formatarMoeda(Math.abs(valor))}</span>
+            <span data-label="Valor Efetivo" class="financeiro-valor ${classeValorEfetivo}">${formatarMoeda(Math.abs(valor))}</span>
             <span data-label="Valor Inf." class="financeiro-valor">${valorInfo > 0 ? formatarMoeda(valorInfo) : "-"}</span>
             <span data-label="Reserva">${item.referenciaReserva || "-"}</span>
             <span data-label="Natureza">${natureza}</span>
             <span data-label="Origem"><small class="financeiro-origem-badge">${origemMarcador}</small></span>
+            <span data-label="Ações">
+              <button type="button" class="financeiro-edit-btn" data-financeiro-edit-id="${item.id}">
+                Editar
+              </button>
+            </span>
           </div>
         </article>
       `;
@@ -1680,20 +1706,12 @@ function calcularValorTotalFinanceiro() {
   return total;
 }
 
-function abrirModalFinanceiro() {
-  if (!financeiroModal) return;
+function popularPrediosFinanceiro(predioSelecionado = "") {
+  if (!financeiroPredioInput) return;
 
-  financeiroTipoInput.value = "saida";
-  financeiroCategoriaInput.value = "Operacional";
-  financeiroDescricaoInput.value = "";
-  financeiroPredioInput.value = "";
-  financeiroApartamentoInput.innerHTML = '<option value="">Selecione o apartamento</option>';
-  financeiroQuantidadeInput.value = "";
-  financeiroValorUnitarioInput.value = "";
-  financeiroDataInput.value = hojeISO();
-
-  const predios = [...new Set(custosApartamentos.map((item) => item.predio))].sort();
+  const predios = [...new Set(custosApartamentos.map((item) => item.predio).filter(Boolean))].sort();
   financeiroPredioInput.innerHTML = '<option value="">Selecione o prédio</option>';
+
   predios.forEach((predio) => {
     const option = document.createElement("option");
     option.value = predio;
@@ -1701,16 +1719,118 @@ function abrirModalFinanceiro() {
     financeiroPredioInput.appendChild(option);
   });
 
+  if (predioSelecionado) {
+    if (!predios.includes(predioSelecionado)) {
+      const option = document.createElement("option");
+      option.value = predioSelecionado;
+      option.textContent = predioSelecionado;
+      financeiroPredioInput.appendChild(option);
+    }
+
+    financeiroPredioInput.value = predioSelecionado;
+    return;
+  }
+
+  financeiroPredioInput.value = "";
+}
+
+function popularApartamentosFinanceiro(predio, apartamentoSelecionado = "") {
+  if (!financeiroApartamentoInput) return;
+
+  const apartamentos = custosApartamentos
+    .filter((item) => item.predio === predio)
+    .map((item) => item.apartamento)
+    .filter(Boolean);
+
+  financeiroApartamentoInput.innerHTML = '<option value="">Selecione o apartamento</option>';
+
+  apartamentos.forEach((apto) => {
+    const option = document.createElement("option");
+    option.value = apto;
+    option.textContent = apto;
+    financeiroApartamentoInput.appendChild(option);
+  });
+
+  if (apartamentoSelecionado) {
+    if (!apartamentos.includes(apartamentoSelecionado)) {
+      const option = document.createElement("option");
+      option.value = apartamentoSelecionado;
+      option.textContent = apartamentoSelecionado;
+      financeiroApartamentoInput.appendChild(option);
+    }
+
+    financeiroApartamentoInput.value = apartamentoSelecionado;
+    return;
+  }
+
+  financeiroApartamentoInput.value = "";
+}
+
+function resetarEstadoModalFinanceiro() {
+  financeiroLancamentoEditandoId = null;
+
+  if (financeiroModalTitulo) {
+    financeiroModalTitulo.textContent = "Novo lan\u00E7amento financeiro";
+  }
+
+  if (financeiroAvisoEdicao) {
+    financeiroAvisoEdicao.textContent = "";
+  }
+}
+
+function abrirModalFinanceiro() {
+  if (!financeiroModal) return;
+
+  resetarEstadoModalFinanceiro();
+  financeiroTipoInput.value = "saida";
+  financeiroCategoriaInput.value = "Operacional";
+  financeiroDescricaoInput.value = "";
+  financeiroQuantidadeInput.value = "";
+  financeiroValorUnitarioInput.value = "";
+  financeiroDataInput.value = hojeISO();
+  popularPrediosFinanceiro();
+  popularApartamentosFinanceiro("");
+
   calcularValorTotalFinanceiro();
   financeiroModal.style.display = "flex";
 }
 
 function fecharModalFinanceiro() {
   if (!financeiroModal) return;
+  resetarEstadoModalFinanceiro();
   financeiroModal.style.display = "none";
 }
 
-function salvarLancamentoManual() {
+function abrirModalEdicaoFinanceiro(lancamento) {
+  if (!financeiroModal || !lancamento) return;
+
+  resetarEstadoModalFinanceiro();
+  financeiroLancamentoEditandoId = lancamento.id;
+
+  if (financeiroModalTitulo) {
+    financeiroModalTitulo.textContent = "Editar lan\u00E7amento financeiro";
+  }
+
+  if (financeiroAvisoEdicao) {
+    financeiroAvisoEdicao.textContent =
+      lancamento.origem && lancamento.origem !== "manual"
+        ? "Este lan\u00E7amento foi gerado automaticamente. Altera\u00E7\u00F5es manuais podem sobrescrever o valor calculado."
+        : "";
+  }
+
+  financeiroTipoInput.value = lancamento.tipo || ((Number(lancamento.valor) || 0) < 0 ? "saida" : "entrada");
+  financeiroCategoriaInput.value = lancamento.categoria || "Operacional";
+  financeiroDescricaoInput.value = lancamento.descricao || "";
+  popularPrediosFinanceiro(lancamento.predio || "");
+  popularApartamentosFinanceiro(lancamento.predio || "", lancamento.apartamento || "");
+  financeiroQuantidadeInput.value = lancamento.quantidade ?? "";
+  financeiroValorUnitarioInput.value = Number(lancamento.valorUnitario) > 0 ? formatarMoeda(lancamento.valorUnitario) : "";
+  financeiroDataInput.value = lancamento.data || hojeISO();
+  calcularValorTotalFinanceiro();
+  financeiroModal.style.display = "flex";
+}
+
+async function salvarLancamentoManual() {
   const tipo = financeiroTipoInput.value;
   const categoria = financeiroCategoriaInput.value;
   const descricao = financeiroDescricaoInput.value.trim();
@@ -1718,18 +1838,18 @@ function salvarLancamentoManual() {
   const apartamento = financeiroApartamentoInput.value;
   const quantidade = Number(financeiroQuantidadeInput.value) || 0;
   const valorUnitario = Number(
-  (financeiroValorUnitarioInput?.value || "")
-    .replace("R$", "")
-    .replace(/\./g, "")
-    .replace(",", ".")
-    .trim()
-) || 0;
+    (financeiroValorUnitarioInput?.value || "")
+      .replace("R$", "")
+      .replace(/\./g, "")
+      .replace(",", ".")
+      .trim()
+  ) || 0;
   const data = financeiroDataInput.value || hojeISO();
 
   if (!descricao || !predio || !apartamento || quantidade <= 0 || valorUnitario <= 0) {
     mostrarFeedback({
       titulo: "Campos incompletos",
-      mensagem: "<p>Preencha todos os campos obrigatórios do lançamento manual.</p>",
+      mensagem: "<p>Preencha todos os campos obrigat\u00F3rios do lan\u00E7amento manual.</p>",
       tipo: "warning"
     });
     return;
@@ -1738,8 +1858,57 @@ function salvarLancamentoManual() {
   const valorBruto = Number((quantidade * valorUnitario).toFixed(2));
   const valor = tipo === "saida" ? valorBruto * -1 : valorBruto;
 
+  if (financeiroLancamentoEditandoId) {
+    const lancamentoAtual = fluxoCaixa.find((item) => item.id === financeiroLancamentoEditandoId);
+
+    if (!lancamentoAtual) {
+      mostrarFeedback({
+        titulo: "Lan\u00E7amento n\u00E3o encontrado",
+        mensagem: "<p>N\u00E3o foi poss\u00EDvel localizar o lan\u00E7amento para edi\u00E7\u00E3o.</p>",
+        tipo: "warning"
+      });
+      return;
+    }
+
+    const itemAtualizado = {
+      ...lancamentoAtual,
+      data,
+      tipo,
+      categoria,
+      descricao,
+      predio,
+      apartamento,
+      quantidade,
+      valorUnitario,
+      valor,
+      atualizadoEm: new Date().toISOString()
+    };
+
+    const atualizadoSheets = await atualizarFluxoCaixaSheets(itemAtualizado);
+
+    if (!atualizadoSheets) {
+      mostrarFeedback({
+        titulo: "Erro ao atualizar",
+        mensagem: "<p>N\u00E3o foi poss\u00EDvel atualizar o lan\u00E7amento no Sheets.</p>",
+        tipo: "danger"
+      });
+      return;
+    }
+
+    fluxoCaixa = fluxoCaixa.map((item) => (item.id === itemAtualizado.id ? itemAtualizado : item));
+    salvarFluxoCaixaLocalStorage();
+    fecharModalFinanceiro();
+    renderizarFinanceiro();
+
+    mostrarFeedback({
+      titulo: "Tudo certo",
+      mensagem: "<p>Lan\u00E7amento financeiro atualizado.</p>"
+    });
+    return;
+  }
+
   const novoLancamento = {
-    id: `fcx-manual-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+    id: "fcx-manual-" + Date.now() + "-" + Math.random().toString(16).slice(2, 8),
     data,
     tipo,
     categoria,
@@ -1754,16 +1923,25 @@ function salvarLancamentoManual() {
     criadoEm: new Date().toISOString()
   };
 
-  fluxoCaixa.push(novoLancamento);
+  const salvoSheets = await salvarFluxoCaixaSheets(novoLancamento);
 
+  if (!salvoSheets) {
+    mostrarFeedback({
+      titulo: "Erro ao salvar",
+      mensagem: "<p>N\u00E3o foi poss\u00EDvel registrar o lan\u00E7amento no Sheets.</p>",
+      tipo: "danger"
+    });
+    return;
+  }
+
+  fluxoCaixa.push(novoLancamento);
   salvarFluxoCaixaLocalStorage();
-  salvarFluxoCaixaSheets(novoLancamento);
   fecharModalFinanceiro();
   renderizarFinanceiro();
 
   mostrarFeedback({
     titulo: "Tudo certo",
-    mensagem: "<p>Lançamento financeiro registrado.</p>"
+    mensagem: "<p>Lan\u00E7amento financeiro registrado.</p>"
   });
 }
 
@@ -2129,6 +2307,37 @@ async function salvarFluxoCaixaSheets(item) {
     return true;
   } catch (erro) {
     console.error("Erro ao salvar fluxoCaixa no Sheets:", erro);
+    return false;
+  }
+}
+async function atualizarFluxoCaixaSheets(item) {
+  if (!item) return false;
+
+  try {
+    const resposta = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      mode: "cors",
+      body: JSON.stringify({
+        action: "atualizarFluxoCaixa",
+        item
+      })
+    });
+
+    if (!resposta.ok) {
+      console.error("Erro ao atualizar fluxoCaixa no Sheets:", resposta.statusText);
+      return false;
+    }
+
+    const data = await resposta.json().catch(() => ({}));
+
+    if (data?.sucesso === false) {
+      console.error("Erro ao atualizar fluxoCaixa no Sheets:", data?.erro || "Resposta inv\u00E1lida");
+      return false;
+    }
+
+    return true;
+  } catch (erro) {
+    console.error("Erro ao atualizar fluxoCaixa no Sheets:", erro);
     return false;
   }
 }
@@ -4772,7 +4981,7 @@ async function processarAirbnbCSV(csv) {
       } else {
         const valorReceita = converterMoedaCsvParaNumero(obterCampoAirbnb(reserva, "Valor"));
         const valorInfo = converterMoedaCsvParaNumero(obterCampoAirbnb(reserva, "Taxa de limpeza"));
-        const taxaServico = converterMoedaCsvParaNumero(obterCampoAirbnb(reserva, "Taxa de serviÃ§o"));
+        const taxaServico = converterMoedaCsvParaNumero(obterCampoAirbnb(reserva, "Taxa de serviço"));
 
         const dataEntradaAirbnb = normalizarDataSistema(obterCampoAirbnb(reserva, "Data de início"), "airbnb");
         const dataSaidaAirbnb = normalizarDataSistema(obterCampoAirbnb(reserva, "Data de término"), "airbnb");
@@ -4974,6 +5183,26 @@ if (financeiroSalvarBtn) {
   financeiroSalvarBtn.addEventListener("click", salvarLancamentoManual);
 }
 
+if (financeiroList) {
+  financeiroList.addEventListener("click", (event) => {
+    const botaoEditar = event.target.closest("[data-financeiro-edit-id]");
+    if (!botaoEditar) return;
+
+    const lancamento = fluxoCaixa.find((item) => item.id === botaoEditar.dataset.financeiroEditId);
+
+    if (!lancamento) {
+      mostrarFeedback({
+        titulo: "Lan\u00E7amento n\u00E3o encontrado",
+        mensagem: "<p>N\u00E3o foi poss\u00EDvel localizar o lan\u00E7amento selecionado.</p>",
+        tipo: "warning"
+      });
+      return;
+    }
+
+    abrirModalEdicaoFinanceiro(lancamento);
+  });
+}
+
 const financeiroDataHeader = document.querySelector(".financeiro-table-header span:first-child");
 
 if (financeiroDataHeader) {
@@ -4992,18 +5221,7 @@ if (financeiroDataHeader) {
 
 if (financeiroPredioInput) {
   financeiroPredioInput.addEventListener("change", () => {
-    const predio = financeiroPredioInput.value;
-    const aptos = custosApartamentos
-      .filter((item) => item.predio === predio)
-      .map((item) => item.apartamento);
-
-    financeiroApartamentoInput.innerHTML = '<option value="">Selecione o apartamento</option>';
-    aptos.forEach((apto) => {
-      const option = document.createElement("option");
-      option.value = apto;
-      option.textContent = apto;
-      financeiroApartamentoInput.appendChild(option);
-    });
+    popularApartamentosFinanceiro(financeiroPredioInput.value);
   });
 }
 
@@ -5061,5 +5279,4 @@ async function carregarLimpezasSheets() {
   }
 
 }
-
 

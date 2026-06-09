@@ -1582,7 +1582,7 @@ button.is-loading::after {
 
 .financeiro-table-header {
   display: grid;
-  grid-template-columns: 90px 115px 1.4fr 105px 55px 40px 95px 115px 100px 110px 60px 55px;
+  grid-template-columns: 90px 115px 1.4fr 105px 55px 40px 95px 115px 100px 110px 60px 55px 90px;
   gap: 8px;
   background: #f8fbff;
   border: 1px solid rgba(63,162,227,0.2);
@@ -1612,7 +1612,7 @@ button.is-loading::after {
 
 .financeiro-item-header {
   display: grid;
-  grid-template-columns: 90px 115px 1.4fr 105px 55px 40px 95px 115px 100px 110px 60px 55px;
+  grid-template-columns: 90px 115px 1.4fr 105px 55px 40px 95px 115px 100px 110px 60px 55px 90px;
   gap: 8px;
   align-items: center;
 }
@@ -1637,12 +1637,30 @@ button.is-loading::after {
   white-space: nowrap;
 }
 
-.valor-saida {
-  color: #b91c1c;
+.financeiro-item-header span.financeiro-valor.valor-saida,
+.financeiro-item-header span.financeiro-valor.valor-debito {
+  color: #dc2626;
 }
 
-.valor-entrada {
+.financeiro-item-header span.financeiro-valor.valor-entrada,
+.financeiro-item-header span.financeiro-valor.valor-credito {
+  color: #64748b;
+}
+
+.financeiro-card.financeiro-card-saidas strong {
+  color: #dc2626;
+}
+
+.financeiro-card.financeiro-card-entradas strong {
   color: #166534;
+}
+
+.financeiro-card.financeiro-card-resultado-positivo strong {
+  color: #166534;
+}
+
+.financeiro-card.financeiro-card-resultado-negativo strong {
+  color: #dc2626;
 }
 
 .empty-financeiro {
@@ -1666,6 +1684,22 @@ button.is-loading::after {
   white-space: nowrap;
 }
 
+.financeiro-edit-btn {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid rgba(63,162,227,0.3);
+  border-radius: 10px;
+  background: #fff;
+  color: #1F4E79;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.financeiro-edit-btn:hover {
+  background: #f8fbff;
+}
+
 .financeiro-total-preview {
   margin-top: 2px;
   margin-bottom: 12px;
@@ -1676,6 +1710,15 @@ button.is-loading::after {
   color: #1F4E79;
   font-weight: 700;
   font-size: 13px;
+}
+
+.financeiro-aviso-edicao {
+  margin-top: 8px;
+  margin-bottom: 12px;
+  color: #b45309;
+  font-size: 12px;
+  line-height: 1.4;
+  min-height: 18px;
 }
 
 /* RESERVAS */

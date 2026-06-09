@@ -18,7 +18,7 @@
       <h1>Short Stay ADM</h1>
       <p>Acesse com seu perfil para continuar.</p>
       <form class="login-form" id="loginForm">
-        <input type="text" id="loginEmail" placeholder="Usuário" required>
+        <input type="text" id="loginEmail" placeholder="UsuÃ¡rio" required>
         <input type="password" id="loginSenha" placeholder="Senha" required>
         <p class="login-error" id="loginError"></p>
         <button type="submit">Entrar</button>
@@ -32,7 +32,7 @@
         <img src="assets/img/logo_shortstay_cortado.png" alt="Short Stay ADM" class="logo-full">
       </div>
       <div class="user-box" id="userBox">
-        <strong id="userNome">Usuário</strong>
+        <strong id="userNome">UsuÃ¡rio</strong>
         <span id="userPerfil">perfil</span>
         <button class="logout-btn" id="logoutBtn">Sair</button>
       </div>
@@ -41,8 +41,8 @@
         <ul>
          <li class="menu-group closed" id="operacaoMenu">
   <div class="menu-group-title">
-    <span>Operação</span>
-    <span class="menu-arrow">▼</span>
+    <span>OperaÃ§Ã£o</span>
+    <span class="menu-arrow">â–¼</span>
   </div>
 
   <ul class="submenu">
@@ -51,7 +51,7 @@
     </li>
 
     <li class="menu-item" data-page="concluidasPage">
-      Concluídas
+      ConcluÃ­das
     </li>
 
     <li class="menu-item" data-page="canceladasPage">
@@ -61,12 +61,12 @@
 </li>
           <li class="menu-group closed" id="gestaoMenu">
             <div class="menu-group-title">
-              <span>Gestão</span>
-              <span class="menu-arrow">▼</span>
+              <span>GestÃ£o</span>
+              <span class="menu-arrow">â–¼</span>
             </div>
             <ul class="submenu">
               <li class="menu-item" data-page="adminPage">
-                Importações
+                ImportaÃ§Ãµes
               </li>
               <li class="menu-item" data-page="apartamentosPage">
                 Apartamentos
@@ -78,21 +78,21 @@
                 Reservas
               </li>
               <li class="menu-item" data-page="proprietariosPage">
-                Proprietários
+                ProprietÃ¡rios
               </li>
             </ul>
           </li>
           <li class="menu-group closed" id="relatoriosMenu">
             <div class="menu-group-title">
-              <span>Relatórios</span>
-              <span class="menu-arrow">▼</span>
+              <span>RelatÃ³rios</span>
+              <span class="menu-arrow">â–¼</span>
             </div>
             <ul class="submenu">
               <li class="menu-item" data-page="relatoriosPage" data-relatorio-tab="shortstay">
                 ShortStay
               </li>
               <li class="menu-item" data-page="relatoriosPage" data-relatorio-tab="proprietario">
-                Proprietário
+                ProprietÃ¡rio
               </li>
             </ul>
           </li>
@@ -105,10 +105,10 @@
 
     <main class="content">
 
-      <!-- OPERAÇÃO / ATIVAS -->
+      <!-- OPERAÃ‡ÃƒO / ATIVAS -->
       <section class="page active-page" id="ativasPage">
         <div class="header">
-          <h1>Operação - Ativas</h1>
+          <h1>OperaÃ§Ã£o - Ativas</h1>
           <p>Painel operacional das limpezas pendentes.</p>
         </div>
 
@@ -116,15 +116,15 @@
           <div class="kpi-card"><span class="kpi-label">Pendentes</span><h2 id="kpiPendentes">0</h2></div>
           <div class="kpi-card"><span class="kpi-label">Hoje</span><h2 id="kpiHoje">0</h2></div>
           <div class="kpi-card"><span class="kpi-label">Vencidas</span><h2 id="kpiVencidas">0</h2></div>
-          <div class="kpi-card"><span class="kpi-label">Concluídas</span><h2 id="kpiConcluidas">0</h2></div>
+          <div class="kpi-card"><span class="kpi-label">ConcluÃ­das</span><h2 id="kpiConcluidas">0</h2></div>
         </div>
 
         <div class="filters-container">
           <div class="quick-filters">
             <button class="quick-filter active-quick" data-period="today">Hoje</button>
-            <button class="quick-filter" data-period="tomorrow">Amanhã</button>
+            <button class="quick-filter" data-period="tomorrow">AmanhÃ£</button>
             <button class="quick-filter" data-period="week">Semana</button>
-            <button class="quick-filter" data-period="month">Mês</button>
+            <button class="quick-filter" data-period="month">MÃªs</button>
             <button class="quick-filter" data-period="all">Todos</button>
           </div>
 
@@ -135,7 +135,7 @@
           </select>
 
           <select id="filterPredio">
-            <option value="">Todos os Prédios</option>
+            <option value="">Todos os PrÃ©dios</option>
             <option value="Nex One Moema">Nex One Moema</option>
             <option value="Essential Perdizes">Essential Perdizes</option>
             <option value="Smart Bourbon">Smart Bourbon</option>
@@ -152,11 +152,11 @@
         <section class="cards" id="cardsContainer"></section>
       </section>
 
-      <!-- OPERAÇÃO / CONCLUÍDAS -->
+      <!-- OPERAÃ‡ÃƒO / CONCLUÃDAS -->
       <section class="page" id="concluidasPage">
         <div class="header">
-          <h1>Operação - Concluídas</h1>
-          <p>Histórico operacional das limpezas finalizadas.</p>
+          <h1>OperaÃ§Ã£o - ConcluÃ­das</h1>
+          <p>HistÃ³rico operacional das limpezas finalizadas.</p>
         </div>
         <div class="filters-container history-filters" data-history="concluidas">
           <div class="quick-filters">
@@ -174,7 +174,7 @@
           </select>
 
           <select id="filterConcluidasPredio">
-            <option value="">Todos os Prédios</option>
+            <option value="">Todos os PrÃ©dios</option>
             <option value="Nex One Moema">Nex One Moema</option>
             <option value="Essential Perdizes">Essential Perdizes</option>
             <option value="Smart Bourbon">Smart Bourbon</option>
@@ -189,10 +189,10 @@
         <section class="cards" id="completedCardsContainer"></section>
       </section>
 
-      <!-- OPERAÇÃO / CANCELADAS -->
+      <!-- OPERAÃ‡ÃƒO / CANCELADAS -->
       <section class="page" id="canceladasPage">
         <div class="header">
-          <h1>Operação - Canceladas</h1>
+          <h1>OperaÃ§Ã£o - Canceladas</h1>
           <p>Limpezas canceladas para rastreabilidade operacional.</p>
         </div>
         <div class="filters-container history-filters" data-history="canceladas">
@@ -211,7 +211,7 @@
           </select>
 
           <select id="filterCanceladasPredio">
-            <option value="">Todos os Prédios</option>
+            <option value="">Todos os PrÃ©dios</option>
             <option value="Nex One Moema">Nex One Moema</option>
             <option value="Essential Perdizes">Essential Perdizes</option>
             <option value="Smart Bourbon">Smart Bourbon</option>
@@ -229,27 +229,27 @@
       <!-- ADMIN -->
       <section class="page" id="adminPage">
         <div class="header">
-          <h1>Administração</h1>
-          <p>Criação, importação e gestão das limpezas.</p>
+          <h1>AdministraÃ§Ã£o</h1>
+          <p>CriaÃ§Ã£o, importaÃ§Ã£o e gestÃ£o das limpezas.</p>
         </div>
 
         <div class="admin-card">
-          <h3>Importação de Reservas</h3>
-          <p>Importe os relatórios CSV para gerar limpezas automaticamente.</p>
+          <h3>ImportaÃ§Ã£o de Reservas</h3>
+          <p>Importe os relatÃ³rios CSV para gerar limpezas automaticamente.</p>
 
           <div class="import-grid">
             <div class="import-box">
-              <div class="import-icon">🏨</div>
+              <div class="import-icon">ðŸ¨</div>
               <h4>Booking</h4>
-              <p>Upload do relatório CSV do Booking.</p>
+              <p>Upload do relatÃ³rio CSV do Booking.</p>
               <input type="file" id="csvFileInput" accept=".csv,.xls,.xlsx">
               <button class="import-btn">Importar Booking</button>
             </div>
 
             <div class="import-box">
-              <div class="import-icon">🏠</div>
+              <div class="import-icon">ðŸ </div>
               <h4>Airbnb</h4>
-              <p>Upload do relatório CSV do Airbnb.</p>
+              <p>Upload do relatÃ³rio CSV do Airbnb.</p>
               <input type="file" id="airbnbFileInput" accept=".csv">
               <button class="import-airbnb-btn">Importar Airbnb</button>
             </div>
@@ -267,18 +267,18 @@
       <section class="page" id="apartamentosPage">
         <div class="header">
           <h1>Apartamentos</h1>
-          <p>Cadastro de unidades e memória de custos operacionais.</p>
+          <p>Cadastro de unidades e memÃ³ria de custos operacionais.</p>
           <div class="apartamentos-acoes">
             <button id="novoApartamentoBtn" class="apartamento-new-btn">+ Novo apartamento</button>
             <select id="apartamentosFiltroPredio" class="apartamento-filtro-predio">
-              <option value="">Todos os prédios</option>
+              <option value="">Todos os prÃ©dios</option>
             </select>
           </div>
         </div>
 
         <section class="apartamentos-summary">
           <div class="apartamentos-summary-card">
-            <span>Total de prédios</span>
+            <span>Total de prÃ©dios</span>
             <strong id="totalPredios">0</strong>
           </div>
           <div class="apartamentos-summary-card">
@@ -297,12 +297,12 @@
       <section class="page" id="financeiroPage">
         <div class="header">
           <h1>Financeiro</h1>
-          <p>Fluxo de caixa operacional gerado pelas finalizações.</p>
+          <p>Fluxo de caixa operacional gerado pelas finalizaÃ§Ãµes.</p>
         </div>
 
         <section class="financeiro-summary">
-          <div class="financeiro-card"><span>Total de lançamentos</span><strong id="financeiroTotalLancamentos">0</strong></div>
-          <div class="financeiro-card"><span>Total de saídas</span><strong id="financeiroTotalSaidas">R$ 0,00</strong></div>
+          <div class="financeiro-card"><span>Total de lanÃ§amentos</span><strong id="financeiroTotalLancamentos">0</strong></div>
+          <div class="financeiro-card"><span>Total de saÃ­das</span><strong id="financeiroTotalSaidas">R$ 0,00</strong></div>
           <div class="financeiro-card"><span>Total de entradas</span><strong id="financeiroTotalEntradas">R$ 0,00</strong></div>
           <div class="financeiro-card"><span>Resultado</span><strong id="financeiroResultado">R$ 0,00</strong></div>
         </section>
@@ -312,7 +312,7 @@
             <option value="">Todos os meses</option>
           </select>
           <select id="financeiroFiltroPredio">
-            <option value="">Todos os Prédios</option>
+            <option value="">Todos os PrÃ©dios</option>
           </select>
           <select id="financeiroFiltroApartamento">
             <option value="">Todos os apartamentos</option>
@@ -320,16 +320,16 @@
           <select id="financeiroFiltroCategoria">
             <option value="">Todas as categorias</option>
           </select>
-          <input type="text" id="financeiroBusca" placeholder="Buscar descrição, categoria ou reserva">
+          <input type="text" id="financeiroBusca" placeholder="Buscar descriÃ§Ã£o, categoria ou reserva">
           <button class="financeiro-btn-secundario" id="financeiroLimparFiltrosBtn">Limpar filtros</button>
-          <button class="financeiro-btn-primario" id="financeiroNovoLancamentoBtn">+ Novo lançamento</button>
+          <button class="financeiro-btn-primario" id="financeiroNovoLancamentoBtn">+ Novo lanÃ§amento</button>
         </section>
 
         <section class="financeiro-table-header">
           <span>Data</span>
           <span>Categoria</span>
-          <span>Descrição</span>
-          <span>Prédio</span>
+          <span>DescriÃ§Ã£o</span>
+          <span>PrÃ©dio</span>
           <span>Apto.</span>
           <span>Qtd</span>
           <span>Valor unit.</span>
@@ -338,7 +338,7 @@
           <span>Reserva</span>
           <span>Natureza</span>
           <span>Origem</span>
-          <span>Ações</span>
+          <span>AÃ§Ãµes</span>
         </section>
 
         <section class="financeiro-list" id="financeiroList"></section>
@@ -347,27 +347,27 @@
       <section class="page" id="reservasPage">
         <div class="header">
           <h1>Reservas</h1>
-          <p>Consulta de reservas por código, origem, prédio e mês de entrada.</p>
+          <p>Consulta de reservas por cÃ³digo, origem, prÃ©dio e mÃªs de entrada.</p>
         </div>
 
         <section class="reservas-filters">
-          <input type="text" id="reservasBuscaCodigo" placeholder="Buscar código reserva">
+          <input type="text" id="reservasBuscaCodigo" placeholder="Buscar cÃ³digo reserva">
           <select id="reservasFiltroOrigem">
             <option value="">Todas as origens</option>
           </select>
           <select id="reservasFiltroPredio">
-            <option value="">Todos os prédios</option>
+            <option value="">Todos os prÃ©dios</option>
           </select>
           <input type="month" id="reservasFiltroMesEntrada">
         </section>
 
         <section class="reservas-table-header">
-          <span>Código</span>
+          <span>CÃ³digo</span>
           <span>Origem</span>
-          <span>Hóspede</span>
+          <span>HÃ³spede</span>
           <span>Entrada</span>
-          <span>Saída</span>
-          <span>Prédio</span>
+          <span>SaÃ­da</span>
+          <span>PrÃ©dio</span>
           <span>Apartamento</span>
           <span>Valor Efetivo</span>
         </section>
@@ -377,21 +377,21 @@
 
       <section class="page" id="relatoriosPage">
         <div class="header">
-          <h1>Relatórios</h1>
-          <p>Visão consolidada para administração e proprietários.</p>
+          <h1>RelatÃ³rios</h1>
+          <p>VisÃ£o consolidada para administraÃ§Ã£o e proprietÃ¡rios.</p>
         </div>
 
         <section class="relatorios-topbar">
           <select id="relatoriosMesCompetencia">
-            <option value="">Competência (mês)</option>
+            <option value="">CompetÃªncia (mÃªs)</option>
           </select>
         </section>
 
         <section class="relatorios-panel active" id="relatoriosPanelShortstay">
           <div class="relatorios-cards-grid">
             <article class="relatorio-card-placeholder"><span>Taxas fixas <small class="badge-entrada">ENTRADA</small></span><strong id="relatorioShortstayTaxasFixas">--</strong></article>
-            <article class="relatorio-card-placeholder"><span>Comissões <small class="badge-entrada">ENTRADA</small></span><strong id="relatorioShortstayComissoes">--</strong></article>
-            <article class="relatorio-card-placeholder"><span>Custos operacionais <small class="badge-saida">SAÍDA</small></span><strong id="relatorioShortstayCustosOperacionais">--</strong></article>
+            <article class="relatorio-card-placeholder"><span>ComissÃµes <small class="badge-entrada">ENTRADA</small></span><strong id="relatorioShortstayComissoes">--</strong></article>
+            <article class="relatorio-card-placeholder"><span>Custos operacionais <small class="badge-saida">SAÃDA</small></span><strong id="relatorioShortstayCustosOperacionais">--</strong></article>
             <article class="relatorio-card-placeholder"><span>Resultado Shortstay <small class="badge-net">NET</small></span><strong id="relatorioShortstayResultado">--</strong></article>
           </div>
         </section>
@@ -399,7 +399,7 @@
         <section class="relatorios-panel" id="relatoriosPanelProprietario">
           <section class="relatorios-proprietario-filtros">
             <select id="relatorioProprietarioFiltroSelect">
-              <option value="">Selecione o proprietário</option>
+              <option value="">Selecione o proprietÃ¡rio</option>
             </select>
             <select id="relatorioApartamentoFiltroSelect">
               <option value="">Todos os apartamentos</option>
@@ -407,13 +407,13 @@
           </section>
           <div class="relatorios-cards-grid">
             <article class="relatorio-card-placeholder"><span>Receita bruta <small class="badge-entrada">ENTRADA</small></span><strong id="relatorioProprietarioReceitaBruta">--</strong></article>
-            <article class="relatorio-card-placeholder"><span>Custos do Variável <small class="badge-saida">SAÍDA</small></span><strong id="relatorioProprietarioCustos">--</strong></article>
-            <article class="relatorio-card-placeholder"><span>Taxa ADM <small class="badge-saida">SAÍDA</small></span><strong id="relatorioProprietarioTaxaAdm">--</strong></article>
-            <article class="relatorio-card-placeholder"><span>Comissão 10% <small class="badge-saida">SAÍDA</small></span><strong id="relatorioProprietarioComissao">--</strong></article>
-            <article class="relatorio-card-placeholder"><span>À Receber <small class="badge-net">NET</small></span><strong id="relatorioProprietarioRepasseLiquido">--</strong></article>
+            <article class="relatorio-card-placeholder"><span>Custos do VariÃ¡vel <small class="badge-saida">SAÃDA</small></span><strong id="relatorioProprietarioCustos">--</strong></article>
+            <article class="relatorio-card-placeholder"><span>Taxa ADM <small class="badge-saida">SAÃDA</small></span><strong id="relatorioProprietarioTaxaAdm">--</strong></article>
+            <article class="relatorio-card-placeholder"><span>ComissÃ£o 10% <small class="badge-saida">SAÃDA</small></span><strong id="relatorioProprietarioComissao">--</strong></article>
+            <article class="relatorio-card-placeholder"><span>Ã Receber <small class="badge-net">NET</small></span><strong id="relatorioProprietarioRepasseLiquido">--</strong></article>
           </div>
           <section class="relatorio-detalhamento" id="relatorioProprietarioDetalhamento">
-            <h3>Detalhamento do relatório</h3>
+            <h3>Detalhamento do relatÃ³rio</h3>
             <div class="relatorio-detalhamento-bloco">
               <h4>Receitas consideradas</h4>
               <div class="relatorio-detalhamento-lista" id="relatorioDetalheReceitas"></div>
@@ -427,7 +427,7 @@
               <div class="relatorio-detalhamento-lista" id="relatorioDetalheTaxaAdm"></div>
             </div>
             <div class="relatorio-detalhamento-bloco">
-              <h4>Comissão</h4>
+              <h4>ComissÃ£o</h4>
               <div class="relatorio-detalhamento-lista" id="relatorioDetalheComissao"></div>
             </div>
           </section>
@@ -437,11 +437,11 @@
       <section class="page" id="documentacaoPage">
         <div class="header">
           <h1>Doc</h1>
-          <p>Manual técnico e operacional do Short Stay ADM.</p>
+          <p>Manual tÃ©cnico e operacional do Short Stay ADM.</p>
         </div>
 
         <section class="documentacao-toolbar">
-          <input type="text" id="documentacaoBusca" class="documentacao-search" placeholder="Buscar por título, categoria, tag ou conteúdo...">
+          <input type="text" id="documentacaoBusca" class="documentacao-search" placeholder="Buscar por tÃ­tulo, categoria, tag ou conteÃºdo...">
           <div id="documentacaoCategorias" class="documentacao-categorias"></div>
         </section>
 
@@ -449,13 +449,13 @@
       </section>
       <section class="page" id="proprietariosPage">
         <div class="header">
-          <h1>Proprietários</h1>
-          <p>Painel visual por unidade e proprietário.</p>
+          <h1>ProprietÃ¡rios</h1>
+          <p>Painel visual por unidade e proprietÃ¡rio.</p>
         </div>
 
         <section class="proprietarios-filtros">
           <select id="proprietarioFiltroSelect">
-            <option value="">Todos os proprietários</option>
+            <option value="">Todos os proprietÃ¡rios</option>
           </select>
         </section>
 
@@ -475,25 +475,25 @@
 
       <input type="hidden" id="apartamentoEditId">
 
-      <label class="apartamento-form-label" for="apartamentoPredioInput">Prédio</label>
-      <input type="text" id="apartamentoPredioInput" placeholder="Prédio do apartamento">
+      <label class="apartamento-form-label" for="apartamentoPredioInput">PrÃ©dio</label>
+      <input type="text" id="apartamentoPredioInput" placeholder="PrÃ©dio do apartamento">
       <label class="apartamento-form-label" for="apartamentoNumeroInput">Apartamento</label>
       <input type="text" id="apartamentoNumeroInput" placeholder="Apartamento">
-      <label class="apartamento-form-label" for="apartamentoProprietarioInput">Proprietário</label>
-      <input type="text" id="apartamentoProprietarioInput" placeholder="Proprietário">
-      <label class="apartamento-form-label" for="apartamentoFaxineiraPadraoInput">Faxineira padrão</label>
-      <input type="text" id="apartamentoFaxineiraPadraoInput" placeholder="Faxineira padrão">
+      <label class="apartamento-form-label" for="apartamentoProprietarioInput">ProprietÃ¡rio</label>
+      <input type="text" id="apartamentoProprietarioInput" placeholder="ProprietÃ¡rio">
+      <label class="apartamento-form-label" for="apartamentoFaxineiraPadraoInput">Faxineira padrÃ£o</label>
+      <input type="text" id="apartamentoFaxineiraPadraoInput" placeholder="Faxineira padrÃ£o">
       <label class="apartamento-form-label" for="apartamentoCustoLimpezaInput">Custo limpeza</label>
       <input type="number" id="apartamentoCustoLimpezaInput" min="0" step="0.01" placeholder="Custo limpeza">
-      <label class="apartamento-form-label" for="apartamentoCustoLavagemInput">Roupa lavagem unitária</label>
-      <input type="number" id="apartamentoCustoLavagemInput" min="0" step="0.01" placeholder="Custo lavagem unitária">
-      <label class="apartamento-form-label" for="apartamentoCustoSecagemInput">Roupa secagem unitária</label>
-      <input type="number" id="apartamentoCustoSecagemInput" min="0" step="0.01" placeholder="Custo secagem unitária">
+      <label class="apartamento-form-label" for="apartamentoCustoLavagemInput">Roupa lavagem unitÃ¡ria</label>
+      <input type="number" id="apartamentoCustoLavagemInput" min="0" step="0.01" placeholder="Custo lavagem unitÃ¡ria">
+      <label class="apartamento-form-label" for="apartamentoCustoSecagemInput">Roupa secagem unitÃ¡ria</label>
+      <input type="number" id="apartamentoCustoSecagemInput" min="0" step="0.01" placeholder="Custo secagem unitÃ¡ria">
             <label class="apartamento-form-label" for="apartamentoTaxaFixaMensalInput">Taxa fixa mensal ADM (R$)</label>
-      <input type="number" id="apartamentoTaxaFixaMensalInput" min="0" step="0.01" placeholder="Taxa fixa mensal de administração (R$)">
-      <label class="apartamento-form-label" for="apartamentoPercentualComissaoInput">Comissão sobre faturamento (%)</label>
-      <input type="number" id="apartamentoPercentualComissaoInput" min="0" step="0.01" placeholder="Comissão sobre faturamento (%)">
-      <label class="apartamento-form-label" for="apartamentoLimiteComissaoInput">Limite comissão</label>
+      <input type="number" id="apartamentoTaxaFixaMensalInput" min="0" step="0.01" placeholder="Taxa fixa mensal de administraÃ§Ã£o (R$)">
+      <label class="apartamento-form-label" for="apartamentoPercentualComissaoInput">ComissÃ£o sobre faturamento (%)</label>
+      <input type="number" id="apartamentoPercentualComissaoInput" min="0" step="0.01" placeholder="ComissÃ£o sobre faturamento (%)">
+      <label class="apartamento-form-label" for="apartamentoLimiteComissaoInput">Limite comissÃ£o</label>
       <input type="number" id="apartamentoLimiteComissaoInput" min="0" step="0.01" placeholder="Ex: 5000">
       <label class="apartamento-form-label" for="apartamentoPercentualComissaoAcimaLimiteInput">% acima do limite</label>
       <input type="number" id="apartamentoPercentualComissaoAcimaLimiteInput" min="0" step="0.01" placeholder="Ex: 8">
@@ -530,7 +530,7 @@
       </div>
 
       <select id="financeiroTipoInput">
-        <option value="saida">Saída</option>
+        <option value="saida">SaÃ­da</option>
         <option value="entrada">Entrada</option>
       </select>
 
@@ -539,7 +539,7 @@
         <option value="Lavagem">Lavagem</option>
         <option value="Secagem">Secagem</option>
         <option value="Insumos">Insumos</option>
-        <option value="Manutenção">Manutenção</option>
+        <option value="ManutenÃ§Ã£o">ManutenÃ§Ã£o</option>
         <option value="Operacional">Operacional</option>
         <option value="Reembolso">Reembolso</option>
         <option value="Receita">Receita</option>
@@ -547,10 +547,10 @@
         <option value="Outro">Outro</option>
       </select>
 
-      <input type="text" id="financeiroDescricaoInput" placeholder="Digite a descrição do lançamento">
+      <input type="text" id="financeiroDescricaoInput" placeholder="Digite a descriÃ§Ã£o do lanÃ§amento">
 
       <select id="financeiroPredioInput">
-        <option value="">Selecione o prédio</option>
+        <option value="">Selecione o prÃ©dio</option>
       </select>
 
       <select id="financeiroApartamentoInput">
@@ -567,13 +567,13 @@
    
       <input type="date" id="financeiroDataInput">
 
-     <p class="financeiro-total-preview" id="financeiroTotalPreview">1 × R$ 0,00 = Saída de R$ 0,00
+     <p class="financeiro-total-preview" id="financeiroTotalPreview">1 Ã— R$ 0,00 = SaÃ­da de R$ 0,00
      </p>
       <p class="financeiro-aviso-edicao" id="financeiroAvisoEdicao"></p>
 
       <div class="modal-actions">
         <button class="apartamento-cancel-btn" id="financeiroCancelBtn">Cancelar</button>
-        <button class="apartamento-save-btn" id="financeiroSalvarBtn">Salvar lançamento</button>
+        <button class="apartamento-save-btn" id="financeiroSalvarBtn">Salvar lanÃ§amento</button>
       </div>
     </div>
   </div>
@@ -587,7 +587,7 @@
       </div>
 
       <select id="predioSelect">
-        <option value="">Selecione o Prédio</option>
+        <option value="">Selecione o PrÃ©dio</option>
         <option value="Nex One Moema">Nex One Moema</option>
         <option value="Essential Perdizes">Essential Perdizes</option>
         <option value="Smart Bourbon">Smart Bourbon</option>
@@ -610,11 +610,11 @@
 
       <select id="tipoFaxinaSelect">
         <option value="">Tipo de Faxina</option>
-        <option value="Troca de hóspede">Troca de hóspede</option>
+        <option value="Troca de hÃ³spede">Troca de hÃ³spede</option>
         <option value="Refinada">Refinada</option>
       </select>
 
-      <input type="number" id="qtdHospedesInput" min="1" placeholder="Quantidade de hóspedes">
+      <input type="number" id="qtdHospedesInput" min="1" placeholder="Quantidade de hÃ³spedes">
       <input type="date" id="dataLimpeza">
       <input type="time" id="horaLimpeza" value="12:00">
       <button class="save-btn">Criar Limpeza</button>
@@ -631,7 +631,7 @@
 
       <div class="detail-header">
         <h3 id="detailApartamento">Apartamento</h3>
-        <p id="detailInfos">Informações</p>
+        <p id="detailInfos">InformaÃ§Ãµes</p>
       </div>
 
       <div class="form-section">
@@ -643,7 +643,7 @@
       </div>
 
       <div class="form-section">
-        <label>Ocorrências</label>
+        <label>OcorrÃªncias</label>
 
         <label class="checkbox-line">
           <input type="checkbox" id="danoCheckbox">
@@ -660,7 +660,7 @@
           <div class="insumos-grid">
             <label><input type="checkbox" value="Detergente">Detergente</label>
             <label><input type="checkbox" value="Esponja">Esponja</label>
-            <label><input type="checkbox" value="Cândida">Cândida</label>
+            <label><input type="checkbox" value="CÃ¢ndida">CÃ¢ndida</label>
             <label><input type="checkbox" value="Desinfetante">Desinfetante</label>
             <label><input type="checkbox" value="Removedor">Removedor</label>
             <label><input type="checkbox" value="Limpa Vidro">Limpa Vidro</label>
@@ -672,18 +672,18 @@
           <div class="insumos-grid">
             <label><input type="checkbox" value="Sabonete">Sabonete</label>
             <label><input type="checkbox" value="Shampoo">Shampoo</label>
-            <label><input type="checkbox" value="Papel Higiênico">Papel Higiênico</label>
+            <label><input type="checkbox" value="Papel HigiÃªnico">Papel HigiÃªnico</label>
           </div>
 
           <h4>Alimentos</h4>
           <div class="insumos-grid">
-            <label><input type="checkbox" value="Café">Café</label>
-            <label><input type="checkbox" value="Açúcar">Açúcar</label>
-            <label><input type="checkbox" value="Adoçante">Adoçante</label>
+            <label><input type="checkbox" value="CafÃ©">CafÃ©</label>
+            <label><input type="checkbox" value="AÃ§Ãºcar">AÃ§Ãºcar</label>
+            <label><input type="checkbox" value="AdoÃ§ante">AdoÃ§ante</label>
           </div>
         </div>
 
-        <textarea id="observacoesInput" placeholder="Observações da limpeza"></textarea>
+        <textarea id="observacoesInput" placeholder="ObservaÃ§Ãµes da limpeza"></textarea>
       </div>
 
       <div class="modal-actions">
@@ -708,7 +708,7 @@
   <!-- MODAL FEEDBACK -->
   <div class="modal feedback-modal" id="feedbackModal">
     <div class="modal-content feedback-content">
-      <div class="feedback-icon" id="feedbackIcon">✓</div>
+      <div class="feedback-icon" id="feedbackIcon">âœ“</div>
       <h2 id="feedbackTitle">Tudo certo</h2>
       <div class="feedback-message" id="feedbackMessage"></div>
       <button class="feedback-ok-btn" id="feedbackOkBtn">OK</button>
@@ -720,6 +720,7 @@
 </body>
 
 </html>
+
 
 
 
