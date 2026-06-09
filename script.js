@@ -1058,7 +1058,9 @@ function buscarCustosApartamento(predio, apartamento) {
 
 function removerLancamentosFinanceirosPorLimpeza(limpezaId) {
   fluxoCaixa = fluxoCaixa.filter((lancamento) => {
-    return lancamento.referenciaLimpeza !== limpezaId;
+    const mesmaLimpeza = lancamento.referenciaLimpeza === limpezaId;
+    const origemFinalizacao = lancamento.origem === "finalizacao_limpeza";
+    return !(mesmaLimpeza && origemFinalizacao);
   });
 }
 
@@ -4698,8 +4700,8 @@ async function processarAirbnbCSV(csv) {
     const referencia =
       obterCampoAirbnb(reserva, "Código de Confirmação");
 
-    const anuncio =
-      obterCampoAirbnb(reserva, "AnÃºncio");
+ const anuncio =
+  obterCampoAirbnb(reserva, "Anúncio", "Anuncio");
 
     const dadosImovel =
       buscarImovelPorAnuncio("airbnb", anuncio);  
