@@ -989,6 +989,18 @@ button.is-loading::after {
     0 18px 34px rgba(31,78,121,0.14);
 }
 
+.import-drop-zone {
+  border: 2px dashed rgba(63, 162, 227, 0.35);
+  cursor: pointer;
+}
+
+.import-drop-zone.drag-over {
+  border-color: #2f8dcc;
+  background: #eef8ff;
+  box-shadow: 0 0 0 4px rgba(63, 162, 227, 0.12);
+  transform: translateY(-2px);
+}
+
 .import-icon {
   width: 58px;
   height: 58px;
@@ -1042,6 +1054,16 @@ button.is-loading::after {
   background: #f8fbff;
 
   cursor: pointer;
+}
+
+.import-file-name {
+  display: block;
+  min-height: 18px;
+  margin: -6px 0 14px;
+  color: #1f4e79;
+  font-size: 12px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .import-box button {

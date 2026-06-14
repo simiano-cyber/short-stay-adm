@@ -241,19 +241,21 @@
           <p>Importe os relatórios CSV para gerar limpezas automaticamente.</p>
 
           <div class="import-grid">
-            <div class="import-box">
+            <div class="import-box import-drop-zone" data-import-input="csvFileInput">
               <div class="import-icon">🏨</div>
               <h4>Booking</h4>
-              <p>Upload do relatório CSV do Booking.</p>
+              <p>Arraste o relatório aqui ou selecione pelo caminho.</p>
               <input type="file" id="csvFileInput" accept=".csv,.xls,.xlsx">
+              <small class="import-file-name" data-file-name-for="csvFileInput">Nenhum arquivo selecionado</small>
               <button class="import-btn">Importar Booking</button>
             </div>
 
-            <div class="import-box">
+            <div class="import-box import-drop-zone" data-import-input="airbnbFileInput">
               <div class="import-icon">🏠</div>
               <h4>Airbnb</h4>
-              <p>Upload do relatório CSV do Airbnb.</p>
+              <p>Arraste o relatório aqui ou selecione pelo caminho.</p>
               <input type="file" id="airbnbFileInput" accept=".csv">
+              <small class="import-file-name" data-file-name-for="airbnbFileInput">Nenhum arquivo selecionado</small>
               <button class="import-airbnb-btn">Importar Airbnb</button>
             </div>
           </div>
@@ -765,7 +767,6 @@
 </body>
 
 </html>
-
 
 
 

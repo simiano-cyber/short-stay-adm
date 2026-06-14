@@ -175,6 +175,67 @@ const airbnbFileInput = document.getElementById("airbnbFileInput");
 
 const importAirbnbBtn = document.querySelector(".import-airbnb-btn");
 
+function atualizarNomeArquivoImportacao(input) {
+  if (!input) return;
+  const nomeArquivo = input.files?.[0]?.name || "Nenhum arquivo selecionado";
+  const indicador = document.querySelector(`[data-file-name-for="${input.id}"]`);
+  if (indicador) indicador.textContent = nomeArquivo;
+}
+
+function arquivoAceitoNoInput(arquivo, input) {
+  const nome = String(arquivo?.name || "").toLowerCase();
+  const extensoes = String(input?.accept || "")
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter((item) => item.startsWith("."));
+  return extensoes.some((extensao) => nome.endsWith(extensao));
+}
+
+document.querySelectorAll(".import-drop-zone[data-import-input]").forEach((zona) => {
+  const input = document.getElementById(zona.dataset.importInput);
+  if (!input) return;
+
+  ["dragenter", "dragover"].forEach((evento) => {
+    zona.addEventListener(evento, (event) => {
+      event.preventDefault();
+      zona.classList.add("drag-over");
+    });
+  });
+
+  ["dragleave", "drop"].forEach((evento) => {
+    zona.addEventListener(evento, (event) => {
+      event.preventDefault();
+      zona.classList.remove("drag-over");
+    });
+  });
+
+  zona.addEventListener("drop", (event) => {
+    const arquivo = event.dataTransfer?.files?.[0];
+    if (!arquivo) return;
+
+    if (!arquivoAceitoNoInput(arquivo, input)) {
+      mostrarFeedback({
+        titulo: "Arquivo inválido",
+        mensagem: `<p>Selecione um arquivo compatível: ${input.accept}.</p>`,
+        tipo: "warning"
+      });
+      return;
+    }
+
+    const transferencia = new DataTransfer();
+    transferencia.items.add(arquivo);
+    input.files = transferencia.files;
+    atualizarNomeArquivoImportacao(input);
+  });
+
+  zona.addEventListener("click", (event) => {
+    if (event.target.closest("button") || event.target === input) return;
+    input.click();
+  });
+
+  input.addEventListener("change", () => atualizarNomeArquivoImportacao(input));
+});
+
 const kpiPendentes = document.getElementById("kpiPendentes");
 
 const kpiHoje = document.getElementById("kpiHoje");
@@ -2424,7 +2485,7 @@ function normalizarMapaAnuncioSheets(item) {
   return {
     origem: normalizarTextoChave(item?.origem),
     nomeAnuncio: String(item?.nomeAnuncio || "").trim(),
-    nomeAnuncioChave: normalizarTextoChave(item?.nomeAnuncio),
+    nomeAnuncioChave: String(item?.nomeAnuncio || ""),
     predio: String(item?.predio || "").trim(),
     apartamento: String(item?.apartamento || "").trim(),
     ativo: toBool(item?.ativo, true),
@@ -2467,15 +2528,77 @@ async function sincronizarMapaAnunciosDoSheets() {
   mapaAnunciosSheets = (Array.isArray(listaSheets) ? listaSheets : [])
     .map(normalizarMapaAnuncioSheets)
     .filter((item) => item.origem && item.nomeAnuncioChave);
+
+  await reconciliarMapeamentosPendentes();
+}
+
+async function reconciliarMapeamentosPendentes() {
+  if (!mapaAnunciosSheets.length || !reservas.length) return;
+
+  const reservasAlteradas = [];
+  const limpezasAlteradas = [];
+  const lancamentosAlterados = [];
+
+  reservas.forEach((reserva) => {
+    const semMapeamento = !reserva.predio || !reserva.apartamento ||
+      normalizarTextoChave(reserva.predio) === "a definir" ||
+      normalizarTextoChave(reserva.apartamento) === "a definir";
+    const imovel = semMapeamento
+      ? buscarImovelPorAnuncio(reserva.origem, reserva.nomeApartamento)
+      : completarImovelComFaxineiraPadrao({ predio: reserva.predio, apartamento: reserva.apartamento });
+    if (!imovel?.predio || !imovel?.apartamento) return;
+
+    if (semMapeamento) {
+      reserva.predio = imovel.predio;
+      reserva.apartamento = imovel.apartamento;
+      reserva.atualizadoEm = new Date().toISOString();
+      reservasAlteradas.push(reserva);
+    }
+
+    limpezas.forEach((limpeza) => {
+      if (limpeza.referenciaReserva !== reserva.codigoReserva) return;
+      const precisaAtualizar = limpeza.predio !== imovel.predio || limpeza.apartamento !== imovel.apartamento ||
+        (imovel.faxineira && limpeza.faxineira !== imovel.faxineira);
+      if (!precisaAtualizar) return;
+      limpeza.predio = imovel.predio;
+      limpeza.apartamento = imovel.apartamento;
+      if (imovel.faxineira) limpeza.faxineira = imovel.faxineira;
+      limpezasAlteradas.push(limpeza);
+    });
+
+    fluxoCaixa.forEach((lancamento) => {
+      if (lancamento.referenciaReserva !== reserva.codigoReserva) return;
+      if (lancamento.predio === imovel.predio && lancamento.apartamento === imovel.apartamento) return;
+      lancamento.predio = imovel.predio;
+      lancamento.apartamento = imovel.apartamento;
+      lancamento.atualizadoEm = new Date().toISOString();
+      lancamentosAlterados.push(lancamento);
+    });
+  });
+
+  if (!reservasAlteradas.length && !limpezasAlteradas.length && !lancamentosAlterados.length) return;
+
+  salvarLocalStorage();
+  salvarFluxoCaixaLocalStorage();
+  renderizarReservas();
+  renderizarCards();
+  renderizarFinanceiro();
+  renderizarComissoesMensais();
+
+  await Promise.all([
+    ...reservasAlteradas.map((reserva) => salvarReservaSheets(reserva)),
+    ...limpezasAlteradas.map((limpeza) => atualizarLimpezaSheets(limpeza)),
+    ...lancamentosAlterados.map((lancamento) => atualizarFluxoCaixaSheets(lancamento))
+  ]);
 }
 
 function buscarImovelMapaFixo(origem, nomeAnuncio) {
   const origemNormalizada = normalizarTextoChave(origem);
-  const nomeChave = normalizarTextoChave(nomeAnuncio);
+  const nomeChave = String(nomeAnuncio || "");
 
   if (origemNormalizada === "airbnb") {
     const chaveEncontrada = Object.keys(mapaImoveisAirbnb).find((chave) => {
-      return normalizarTextoChave(chave) === nomeChave;
+      return chave === nomeChave;
     });
 
     return chaveEncontrada ? mapaImoveisAirbnb[chaveEncontrada] : undefined;
@@ -2483,7 +2606,7 @@ function buscarImovelMapaFixo(origem, nomeAnuncio) {
 
   if (origemNormalizada === "booking") {
     const chaveEncontrada = Object.keys(mapaImoveisBooking).find((chave) => {
-      return normalizarTextoChave(chave) === nomeChave;
+      return chave === nomeChave;
     });
 
     return chaveEncontrada ? mapaImoveisBooking[chaveEncontrada] : undefined;
@@ -2536,7 +2659,7 @@ async function sincronizarFaxineirasPendentesComApartamentos() {
 
 function buscarImovelPorAnuncio(origem, nomeAnuncio) {
   const origemNormalizada = normalizarTextoChave(origem);
-  const nomeChave = normalizarTextoChave(nomeAnuncio);
+  const nomeChave = String(nomeAnuncio || "");
 
   const encontradoSheets = mapaAnunciosSheets.find((item) => {
     return item.ativo === true &&
@@ -2836,6 +2959,7 @@ async function sincronizarReservasDoSheets() {
 
   popularFiltrosReservas();
   renderizarReservas();
+  await reconciliarMapeamentosPendentes();
   renderizarComissoesMensais();
 }
 
@@ -5733,6 +5857,7 @@ async function carregarLimpezasSheets() {
     }));
 
     await sincronizarFaxineirasPendentesComApartamentos();
+    await reconciliarMapeamentosPendentes();
 
     salvarLocalStorage();
 
