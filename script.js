@@ -32,6 +32,11 @@ const financeiroTotalLancamentos = document.getElementById("financeiroTotalLanca
 const financeiroTotalSaidas = document.getElementById("financeiroTotalSaidas");
 const financeiroTotalEntradas = document.getElementById("financeiroTotalEntradas");
 const financeiroResultado = document.getElementById("financeiroResultado");
+const comissoesMensaisGrid = document.getElementById("comissoesMensaisGrid");
+const comissoesMensaisPeriodo = document.getElementById("comissoesMensaisPeriodo");
+const fecharComissoesMesBtn = document.getElementById("fecharComissoesMesBtn");
+const comissoesFiltroMes = document.getElementById("comissoesFiltroMes");
+const comissoesBuscaApartamento = document.getElementById("comissoesBuscaApartamento");
 const financeiroLimparFiltrosBtn = document.getElementById("financeiroLimparFiltrosBtn");
 const financeiroNovoLancamentoBtn = document.getElementById("financeiroNovoLancamentoBtn");
 const financeiroModal = document.getElementById("financeiroModal");
@@ -184,6 +189,8 @@ let fluxoCaixa = [];
 let reservas = [];
 let mapaAnunciosSheets = [];
 let financeiroOrdenacaoData = "desc";
+let reservasOrdenacaoCampo = "dataEntrada";
+let reservasOrdenacaoDirecao = "desc";
 let financeiroLancamentoEditandoId = null;
 let confirmDeleteLoadingInterval = null;
 let contadorLimpezas = 1;
@@ -272,8 +279,8 @@ Comiss\u00E3o administrativa:
 Base de comiss\u00E3o = Valor Informativo.
 Campos usados no cadastro do apartamento: percentualComissao, limiteComissao, percentualComissaoAcimaLimite.
 Regra sem limite: Comiss\u00E3o = Base de comiss\u00E3o x percentualComissao.
-Regra com limite: at\u00E9 o limite usa percentualComissao; acima do limite usa percentualComissaoAcimaLimite.
-Regra pendente de valida\u00E7\u00E3o antes de automatizar totalmente.
+Regra com limite: at\u00E9 o limite usa percentualComissao; ao ultrapassar o limite, todo o faturamento usa percentualComissaoAcimaLimite.
+Se limiteComissao ou percentualComissaoAcimaLimite n\u00E3o estiver preenchido, usa somente percentualComissao.
 
 Taxa administrativa fixa:
 Cada apartamento pode ter taxaFixaMensal.
@@ -401,7 +408,7 @@ function aplicarPermissoesUsuario() {
   if (!usuarioLogadoAtual) return;
 
   const permissoesPorPerfil = {
-    admin: ["adminPage", "apartamentosPage", "financeiroPage", "reservasPage", "proprietariosPage", "relatoriosPage", "documentacaoPage"],
+    admin: ["adminPage", "apartamentosPage", "financeiroPage", "comissoesPage", "reservasPage", "proprietariosPage", "relatoriosPage", "documentacaoPage"],
     gestao: ["adminPage", "apartamentosPage", "reservasPage"],
     faxineira: []
   };
@@ -421,7 +428,7 @@ function aplicarPermissoesUsuario() {
     menuRelatorios.style.display = "block";
   }
 
-  ["adminPage", "apartamentosPage", "financeiroPage", "reservasPage", "proprietariosPage", "relatoriosPage", "documentacaoPage"].forEach((pageId) => {
+  ["adminPage", "apartamentosPage", "financeiroPage", "comissoesPage", "reservasPage", "proprietariosPage", "relatoriosPage", "documentacaoPage"].forEach((pageId) => {
     const menuItem = document.querySelector(`.menu-item[data-page="${pageId}"]`);
 
     if (!menuItem) return;
@@ -453,7 +460,7 @@ function aplicarPermissoesUsuario() {
 
   const paginaAtiva = document.querySelector(".page.active-page");
   const paginaAtivaId = paginaAtiva?.id || "";
-  const paginaRestrita = ["adminPage", "apartamentosPage", "financeiroPage", "reservasPage", "proprietariosPage", "relatoriosPage", "documentacaoPage"];
+  const paginaRestrita = ["adminPage", "apartamentosPage", "financeiroPage", "comissoesPage", "reservasPage", "proprietariosPage", "relatoriosPage", "documentacaoPage"];
 
   if (paginaRestrita.includes(paginaAtivaId) && !paginasPermitidas.includes(paginaAtivaId)) {
     document.querySelectorAll(".page").forEach((page) => page.classList.remove("active-page"));
@@ -1205,6 +1212,9 @@ function aplicarFiltrosFinanceiro() {
   const busca = String(financeiroBusca?.value || "").trim().toLowerCase();
 
   return fluxoCaixa.filter((item) => {
+    if (item.categoria === "comissao_administrativa" && !ehFechamentoComissao(item)) return false;
+    if (item.categoria === "taxa_fixa_administrativa" && !ehFechamentoTaxaFixa(item)) return false;
+
     const mesItem = String(item.data || "").slice(0, 7);
 
     if (filtroMes && mesItem !== filtroMes) return false;
@@ -1227,65 +1237,54 @@ function aplicarFiltrosFinanceiro() {
   });
 }
 
-function gerarOuGarantirTaxaFixaMensalApartamentos(dataBase = hojeISO()) {
-  const mesCompetencia = String(normalizarDataSistema(dataBase) || hojeISO()).slice(0, 7);
-  if (!mesCompetencia || mesCompetencia.length !== 7) return;
+function ehFechamentoComissao(lancamento) {
+  if (!lancamento || lancamento.categoria !== "comissao_administrativa") return false;
+  if (lancamento.fechamentoComissao === true || lancamento.fechamentoComissao === "true") return true;
+  return String(lancamento.descricao || "").toLowerCase().includes("fechamento mensal");
+}
 
-  const dataLancamento = `${mesCompetencia}-01`;
-
-  custosApartamentos.forEach((apartamento) => {
-    const taxaBruta = apartamento.financeiro?.taxaFixaMensal;
-    const taxaFixaMensal = taxaBruta === undefined || taxaBruta === null || taxaBruta === ""
-      ? 150
-      : Number(taxaBruta);
-
-    if (!Number.isFinite(taxaFixaMensal) || taxaFixaMensal <= 0) return;
-
-    const jaExiste = fluxoCaixa.some((lancamento) => {
-      return (
-        lancamento.categoria === "taxa_fixa_administrativa" &&
-        lancamento.predio === apartamento.predio &&
-        lancamento.apartamento === apartamento.apartamento &&
-        String(lancamento.data || "").slice(0, 7) === mesCompetencia
-      );
-    });
-
-    if (jaExiste) return;
-
-   const novoLancamento = {
-  id: `fcx-taxa-fixa-${apartamento.id}-${mesCompetencia}`,
-  data: dataLancamento,
-  tipo: "entrada",
-  categoria: "taxa_fixa_administrativa",
-  descricao: "Taxa fixa administrativa mensal",
-  predio: apartamento.predio,
-  apartamento: apartamento.apartamento,
-  quantidade: 1,
-  valorUnitario: taxaFixaMensal,
-  valor: taxaFixaMensal,
-  origem: "taxa_fixa_administrativa",
-  beneficiario: "Ricardo/Shortstay",
-  referenciaLimpeza: "",
-  criadoEm: new Date().toISOString()
-};
-
-fluxoCaixa.push(novoLancamento);
-salvarFluxoCaixaSheets(novoLancamento);
-});
-  salvarFluxoCaixaLocalStorage();
+function ehFechamentoTaxaFixa(lancamento) {
+  if (!lancamento || lancamento.categoria !== "taxa_fixa_administrativa") return false;
+  if (lancamento.fechamentoTaxaFixa === true || lancamento.fechamentoTaxaFixa === "true") return true;
+  return String(lancamento.descricao || "").toLowerCase().includes("fechamento mensal");
 }
 
 function calcularFaturamentoApartamentoMes(apartamento, mesCompetencia) {
   if (!apartamento || !mesCompetencia) return 0;
 
-  return fluxoCaixa
+  const reservasUnicas = new Map();
+  reservas.forEach((reserva) => {
+    const chave = reserva.codigoReserva || `${reserva.origem}-${reserva.predio}-${reserva.apartamento}-${reserva.dataSaida}`;
+    reservasUnicas.set(chave, reserva);
+  });
+
+  const faturamentoReservas = [...reservasUnicas.values()]
+    .filter((reserva) => {
+      const status = normalizarTextoChave(reserva.statusReserva);
+      const mesmaCompetencia = String(reserva.dataSaida || reserva.dataLimpeza || "").slice(0, 7) === mesCompetencia;
+      const mesmoApartamento = normalizarTextoChave(reserva.predio) === normalizarTextoChave(apartamento.predio) &&
+        normalizarTextoChave(reserva.apartamento) === normalizarTextoChave(apartamento.apartamento);
+      return !["cancelado", "cancelada"].includes(status) && mesmaCompetencia && mesmoApartamento;
+    })
+    .reduce((total, reserva) => {
+      const origem = normalizarTextoChave(reserva.origem);
+      const baseComissao = origem === "airbnb"
+        ? Number(reserva.valorInfo) || 0
+        : origem === "booking"
+          ? Number(reserva.valorEfetivo) || 0
+          : Number(reserva.valorInfo || reserva.valorEfetivo) || 0;
+      return total + baseComissao;
+    }, 0);
+
+  const faturamentoManual = fluxoCaixa
     .filter((lancamento) => {
       const mesLancamento = String(lancamento.dataCompetencia || lancamento.data || "").slice(0, 7);
       const mesmoApartamento = lancamento.predio === apartamento.predio && lancamento.apartamento === apartamento.apartamento;
-      const mesmaCompetencia = mesLancamento === mesCompetencia;
-      return mesmaCompetencia && mesmoApartamento && ehReceitaLocacao(lancamento);
+      return lancamento.origem === "manual" && mesLancamento === mesCompetencia && mesmoApartamento && ehReceitaLocacao(lancamento);
     })
-    .reduce((acc, lancamento) => acc + (Number(lancamento.valor) || 0), 0);
+    .reduce((total, lancamento) => total + (Number(lancamento.valorInfo || lancamento.valor) || 0), 0);
+
+  return faturamentoReservas + faturamentoManual;
 }
 
 function ehReceitaLocacao(lancamento) {
@@ -1316,69 +1315,263 @@ function ehReceitaLocacao(lancamento) {
   return manualLocacao;
 }
 
-function gerarOuGarantirComissaoMensalApartamentos(dataBase = hojeISO()) {
-  const mesCompetencia = String(normalizarDataSistema(dataBase) || hojeISO()).slice(0, 7);
-  if (!mesCompetencia || mesCompetencia.length !== 7) return;
+function obterMesComissaoSelecionado() {
+  const mesFiltro = comissoesFiltroMes?.value || "";
+  return /^\d{4}-\d{2}$/.test(mesFiltro) ? mesFiltro : String(hojeISO()).slice(0, 7);
+}
 
-  const [anoTexto, mesTexto] = mesCompetencia.split("-");
-  let ano = Number(anoTexto);
-  let mes = Number(mesTexto);
-  mes += 1;
-  if (mes > 12) {
-    mes = 1;
-    ano += 1;
-  }
-  const dataLancamento = `${ano}-${String(mes).padStart(2, "0")}-01`;
+function calcularComissaoApartamentoMes(apartamento, mesCompetencia) {
+  const percentualBruto = apartamento.financeiro?.percentualComissao;
+  const percentualPrincipal = percentualBruto === undefined || percentualBruto === null || percentualBruto === ""
+    ? 10
+    : Number(percentualBruto);
+  const limiteBruto = apartamento.financeiro?.limiteComissao;
+  const percentualAcimaBruto = apartamento.financeiro?.percentualComissaoAcimaLimite;
+  const limiteComissao = limiteBruto === undefined || limiteBruto === null || limiteBruto === ""
+    ? null
+    : Number(limiteBruto);
+  const percentualAcimaLimite = percentualAcimaBruto === undefined || percentualAcimaBruto === null || percentualAcimaBruto === ""
+    ? null
+    : Number(percentualAcimaBruto);
+  const faturamentoMes = calcularFaturamentoApartamentoMes(apartamento, mesCompetencia);
+  const possuiRegraPorLimite = Number.isFinite(limiteComissao) && limiteComissao > 0 &&
+    Number.isFinite(percentualAcimaLimite) && percentualAcimaLimite >= 0;
+  const percentualAplicado = possuiRegraPorLimite && faturamentoMes > limiteComissao
+    ? percentualAcimaLimite
+    : percentualPrincipal;
+  const valorComissao = Number.isFinite(percentualAplicado)
+    ? Number((faturamentoMes * (percentualAplicado / 100)).toFixed(2))
+    : 0;
+  const taxaBruta = apartamento.financeiro?.taxaFixaMensal;
+  const taxaFixaMensal = taxaBruta === undefined || taxaBruta === null || taxaBruta === ""
+    ? 150
+    : Number(taxaBruta);
+  const lancamentosComissao = fluxoCaixa.filter((lancamento) => {
+    return lancamento.categoria === "comissao_administrativa" &&
+      lancamento.predio === apartamento.predio &&
+      lancamento.apartamento === apartamento.apartamento &&
+      lancamento.mesCompetencia === mesCompetencia;
+  });
+  const lancamentoFechamento = lancamentosComissao.find(ehFechamentoComissao);
+  const lancamentoLegado = lancamentosComissao.find((lancamento) => !ehFechamentoComissao(lancamento));
+  const lancamentosTaxaFixa = fluxoCaixa.filter((lancamento) => {
+    const mesLancamento = String(lancamento.mesCompetencia || lancamento.data || "").slice(0, 7);
+    return lancamento.categoria === "taxa_fixa_administrativa" &&
+      lancamento.predio === apartamento.predio &&
+      lancamento.apartamento === apartamento.apartamento &&
+      mesLancamento === mesCompetencia;
+  });
+  const lancamentoTaxaFixa = lancamentosTaxaFixa.find(ehFechamentoTaxaFixa);
+  const lancamentoTaxaFixaLegado = lancamentosTaxaFixa.find((lancamento) => !ehFechamentoTaxaFixa(lancamento));
 
-  custosApartamentos.forEach((apartamento) => {
-    const percentualBruto = apartamento.financeiro?.percentualComissao;
-    const percentualComissao = percentualBruto === undefined || percentualBruto === null || percentualBruto === ""
-      ? 10
-      : Number(percentualBruto);
+  return {
+    apartamento,
+    faturamentoMes,
+    percentualPrincipal,
+    limiteComissao,
+    percentualAcimaLimite,
+    percentualAplicado,
+    valorComissao,
+    lancamentoFechamento,
+    lancamentoLegado,
+    taxaFixaMensal: Number.isFinite(taxaFixaMensal) && taxaFixaMensal > 0 ? taxaFixaMensal : 0,
+    lancamentoTaxaFixa,
+    lancamentoTaxaFixaLegado
+  };
+}
 
-    if (!Number.isFinite(percentualComissao) || percentualComissao <= 0) return;
+function obterPreviasComissaoMes(mesCompetencia) {
+  return custosApartamentos
+    .filter((apartamento) => apartamento.ativo !== false)
+    .map((apartamento) => calcularComissaoApartamentoMes(apartamento, mesCompetencia));
+}
 
-    const faturamentoMes = calcularFaturamentoApartamentoMes(apartamento, mesCompetencia);
-    if (!faturamentoMes || faturamentoMes <= 0) return;
+function formatarMesCompetencia(mesCompetencia) {
+  const [ano, mes] = String(mesCompetencia || "").split("-");
+  return mes && ano ? `${mes}/${ano}` : mesCompetencia;
+}
 
-    const jaExiste = fluxoCaixa.some((lancamento) => {
-      return (
-        lancamento.categoria === "comissao_administrativa" &&
-        lancamento.predio === apartamento.predio &&
-        lancamento.apartamento === apartamento.apartamento &&
-        lancamento.mesCompetencia === mesCompetencia
-      );
-    });
+function renderizarComissoesMensais() {
+  if (!comissoesMensaisGrid) return;
 
-    if (jaExiste) return;
-
-    const valorComissao = Number((faturamentoMes * (percentualComissao / 100)).toFixed(2));
-    if (valorComissao <= 0) return;
-
-    const novoLancamento = {
-      id: `fcx-comissao-${apartamento.id}-${mesCompetencia}`,
-      data: dataLancamento,
-      mesCompetencia,
-      tipo: "entrada",
-      categoria: "comissao_administrativa",
-      descricao: "Comissão administrativa sobre faturamento",
-      predio: apartamento.predio,
-      apartamento: apartamento.apartamento,
-      quantidade: 1,
-      valorUnitario: valorComissao,
-      valor: valorComissao,
-      origem: "comissao_administrativa",
-      beneficiario: "Ricardo/Shortstay",
-      referenciaLimpeza: "",
-      criadoEm: new Date().toISOString()
-    };
-   
-      fluxoCaixa.push(novoLancamento);
-      salvarFluxoCaixaSheets(novoLancamento);
-
+  const mesCompetencia = obterMesComissaoSelecionado();
+  const previas = obterPreviasComissaoMes(mesCompetencia);
+  const termoBusca = normalizarTextoChave(comissoesBuscaApartamento?.value || "");
+  const previasFiltradas = termoBusca
+    ? previas.filter((previa) => {
+        const apartamento = previa.apartamento;
+        const campos = [apartamento.predio, apartamento.apartamento, apartamento.id]
+          .map(normalizarTextoChave);
+        return campos.some((campo) => campo.includes(termoBusca));
+      })
+    : previas;
+  const pendentes = previas.filter((previa) => {
+    return (previa.valorComissao > 0 && !previa.lancamentoFechamento) ||
+      (previa.taxaFixaMensal > 0 && !previa.lancamentoTaxaFixa);
   });
 
+  if (comissoesMensaisPeriodo) {
+    comissoesMensaisPeriodo.textContent = `Prévia da competência ${formatarMesCompetencia(mesCompetencia)}`;
+  }
+
+  if (fecharComissoesMesBtn) {
+    fecharComissoesMesBtn.disabled = pendentes.length === 0;
+    fecharComissoesMesBtn.textContent = pendentes.length > 0
+      ? `Fechar ${formatarMesCompetencia(mesCompetencia)} (${pendentes.length})`
+      : `${formatarMesCompetencia(mesCompetencia)} fechado`;
+  }
+
+  if (!previasFiltradas.length) {
+    comissoesMensaisGrid.innerHTML = `<p class="comissoes-vazio">${termoBusca ? "Nenhum apartamento encontrado para esta busca." : "Nenhum apartamento ativo encontrado."}</p>`;
+    return;
+  }
+
+  comissoesMensaisGrid.innerHTML = previasFiltradas.map((previa) => {
+    const apartamento = previa.apartamento;
+    const comissaoAplicavel = previa.valorComissao > 0;
+    const taxaAplicavel = previa.taxaFixaMensal > 0;
+    const comissaoFechada = !comissaoAplicavel || Boolean(previa.lancamentoFechamento);
+    const taxaFechada = !taxaAplicavel || Boolean(previa.lancamentoTaxaFixa);
+    const statusFechada = comissaoFechada && taxaFechada;
+    const limiteVisual = Number.isFinite(previa.limiteComissao)
+      ? formatarMoeda(previa.limiteComissao)
+      : "Sem limite";
+    const percentualFechado = previa.lancamentoFechamento?.percentualComissaoAplicado;
+    const percentualVisual = previa.lancamentoFechamento && percentualFechado !== "" && Number.isFinite(Number(percentualFechado))
+      ? Number(percentualFechado)
+      : previa.percentualAplicado;
+    const faturamentoFechado = previa.lancamentoFechamento?.faturamentoBaseComissao;
+    const faturamentoVisual = previa.lancamentoFechamento && faturamentoFechado !== "" && Number(faturamentoFechado) > 0
+      ? Number(faturamentoFechado)
+      : previa.faturamentoMes;
+    const comissaoVisual = previa.lancamentoFechamento
+      ? Number(previa.lancamentoFechamento.valor) || 0
+      : previa.valorComissao;
+    const taxaFixaVisual = previa.lancamentoTaxaFixa
+      ? Number(previa.lancamentoTaxaFixa.valor) || 0
+      : previa.taxaFixaMensal;
+    const totalFechamento = comissaoVisual + taxaFixaVisual;
+
+    return `
+      <article class="comissao-apartamento-card">
+        <div class="comissao-apartamento-topo">
+          <strong>${apartamento.predio} ${apartamento.apartamento}</strong>
+          <span class="comissao-status ${statusFechada ? "fechada" : ""}">${statusFechada ? "Fechada" : "Prévia"}</span>
+        </div>
+        <div class="comissao-apartamento-linha"><span>Faturamento</span><strong>${formatarMoeda(faturamentoVisual)}</strong></div>
+        <div class="comissao-apartamento-linha"><span>Limite</span><strong>${limiteVisual}</strong></div>
+        <div class="comissao-apartamento-linha"><span>Percentual aplicado</span><strong>${percentualVisual}%</strong></div>
+        <div class="comissao-apartamento-linha"><span>Comissão ${comissaoFechada ? "fechada" : "estimada"}</span><strong>${formatarMoeda(comissaoVisual)}</strong></div>
+        <div class="comissao-apartamento-linha"><span>Taxa fixa ${taxaFechada ? "fechada" : "prevista"}</span><strong>${formatarMoeda(taxaFixaVisual)}</strong></div>
+        <div class="comissao-apartamento-linha"><span>Total do fechamento</span><strong>${formatarMoeda(totalFechamento)}</strong></div>
+      </article>
+    `;
+  }).join("");
+}
+
+async function fecharComissoesMes() {
+  const mesCompetencia = obterMesComissaoSelecionado();
+  const pendentes = obterPreviasComissaoMes(mesCompetencia).filter((previa) => {
+    return (previa.valorComissao > 0 && !previa.lancamentoFechamento) ||
+      (previa.taxaFixaMensal > 0 && !previa.lancamentoTaxaFixa);
+  });
+
+  if (!pendentes.length) return;
+
+  fecharComissoesMesBtn.disabled = true;
+  fecharComissoesMesBtn.textContent = "Fechando...";
+
+  const [anoTexto, mesTexto] = mesCompetencia.split("-");
+  const dataFechamento = new Date(Number(anoTexto), Number(mesTexto), 1);
+  const dataLancamento = `${dataFechamento.getFullYear()}-${String(dataFechamento.getMonth() + 1).padStart(2, "0")}-01`;
+  let fechados = 0;
+  let falhas = 0;
+
+  for (const previa of pendentes) {
+    const apartamento = previa.apartamento;
+    const itens = [];
+
+    if (previa.valorComissao > 0 && !previa.lancamentoFechamento) {
+      itens.push({
+        legado: previa.lancamentoLegado,
+        lancamento: {
+          ...(previa.lancamentoLegado || {}),
+          id: previa.lancamentoLegado?.id || `fcx-comissao-${apartamento.id}-${mesCompetencia}`,
+          data: dataLancamento,
+          mesCompetencia,
+          tipo: "entrada",
+          categoria: "comissao_administrativa",
+          descricao: "Comissão administrativa - fechamento mensal",
+          predio: apartamento.predio,
+          apartamento: apartamento.apartamento,
+          quantidade: 1,
+          valorUnitario: previa.valorComissao,
+          valor: previa.valorComissao,
+          origem: "comissao_administrativa",
+          fechamentoComissao: true,
+          beneficiario: "Ricardo/Shortstay",
+          referenciaLimpeza: "",
+          faturamentoBaseComissao: previa.faturamentoMes,
+          percentualComissaoAplicado: previa.percentualAplicado,
+          limiteComissaoAplicado: previa.limiteComissao ?? "",
+          criadoEm: previa.lancamentoLegado?.criadoEm || new Date().toISOString(),
+          atualizadoEm: new Date().toISOString()
+        }
+      });
+    }
+
+    if (previa.taxaFixaMensal > 0 && !previa.lancamentoTaxaFixa) {
+      itens.push({
+        legado: previa.lancamentoTaxaFixaLegado,
+        lancamento: {
+          ...(previa.lancamentoTaxaFixaLegado || {}),
+          id: previa.lancamentoTaxaFixaLegado?.id || `fcx-taxa-fixa-${apartamento.id}-${mesCompetencia}`,
+          data: dataLancamento,
+          mesCompetencia,
+          tipo: "entrada",
+          categoria: "taxa_fixa_administrativa",
+          descricao: "Taxa fixa administrativa - fechamento mensal",
+          predio: apartamento.predio,
+          apartamento: apartamento.apartamento,
+          quantidade: 1,
+          valorUnitario: previa.taxaFixaMensal,
+          valor: previa.taxaFixaMensal,
+          origem: "taxa_fixa_administrativa",
+          fechamentoTaxaFixa: true,
+          beneficiario: "Ricardo/Shortstay",
+          referenciaLimpeza: "",
+          criadoEm: previa.lancamentoTaxaFixaLegado?.criadoEm || new Date().toISOString(),
+          atualizadoEm: new Date().toISOString()
+        }
+      });
+    }
+
+    for (const item of itens) {
+      const salvo = item.legado
+        ? await atualizarFluxoCaixaSheets(item.lancamento)
+        : await salvarFluxoCaixaSheets(item.lancamento);
+
+      if (salvo) {
+        if (item.legado) {
+          fluxoCaixa = fluxoCaixa.map((lancamento) => lancamento.id === item.lancamento.id ? item.lancamento : lancamento);
+        } else {
+          fluxoCaixa.push(item.lancamento);
+        }
+        fechados++;
+      } else {
+        falhas++;
+      }
+    }
+  }
+
   salvarFluxoCaixaLocalStorage();
+  renderizarFinanceiro();
+  renderizarComissoesMensais();
+  mostrarFeedback({
+    titulo: falhas ? "Fechamento parcial" : "Mês fechado",
+    mensagem: `<p>${fechados} lançamento(s) de comissão/taxa fixa fechado(s) para ${formatarMesCompetencia(mesCompetencia)}.${falhas ? ` ${falhas} não foram salvos.` : ""}</p>`,
+    tipo: falhas ? "warning" : "success"
+  });
 }
 
 function atualizarResumoFinanceiro(lancamentos) {
@@ -1624,11 +1817,6 @@ function renderizarDocumentacao() {
 function renderizarFinanceiro() {
   if (!financeiroList) return;
 
-  const mesFiltro = financeiroFiltroMes?.value || "";
-  const dataBaseFinanceiro = /^\d{4}-\d{2}$/.test(mesFiltro) ? `${mesFiltro}-01` : hojeISO();
-
-  gerarOuGarantirTaxaFixaMensalApartamentos(dataBaseFinanceiro);
-  gerarOuGarantirComissaoMensalApartamentos(dataBaseFinanceiro);
   popularFiltrosFinanceiro();
   const lancamentos = aplicarFiltrosFinanceiro()
     .slice()
@@ -2031,10 +2219,13 @@ function normalizarFluxoCaixaSheets(item) {
   const valor = toNumber(item?.valor, 0);
   const tipoInformado = toText(item?.tipo).toLowerCase();
   const tipo = tipoInformado || (valor >= 0 ? "entrada" : "saida");
+  const mesCompetenciaInformada = toText(item?.mesCompetencia);
+  const mesCompetenciaId = id.match(/-(\d{4}-\d{2})$/)?.[1] || "";
 
   return {
     id,
     data: toText(item?.data),
+    mesCompetencia: mesCompetenciaInformada || mesCompetenciaId,
     dataCompetencia: toText(item?.dataCompetencia),
     dataFechamento: toText(item?.dataFechamento),
     dataRecebimentoPrevisto: toText(item?.dataRecebimentoPrevisto),
@@ -2051,6 +2242,15 @@ function normalizarFluxoCaixaSheets(item) {
     origem: toText(item?.origem),
     referenciaLimpeza: toText(item?.referenciaLimpeza),
     referenciaReserva: toText(item?.referenciaReserva),
+    fechamentoComissao: item?.fechamentoComissao === true || String(item?.fechamentoComissao).toLowerCase() === "true",
+    fechamentoTaxaFixa: item?.fechamentoTaxaFixa === true || String(item?.fechamentoTaxaFixa).toLowerCase() === "true",
+    faturamentoBaseComissao: item?.faturamentoBaseComissao === "" || item?.faturamentoBaseComissao === undefined
+      ? ""
+      : toNumber(item?.faturamentoBaseComissao, 0),
+    percentualComissaoAplicado: item?.percentualComissaoAplicado === "" || item?.percentualComissaoAplicado === undefined
+      ? ""
+      : toNumber(item?.percentualComissaoAplicado, 0),
+    limiteComissaoAplicado: item?.limiteComissaoAplicado === "" ? "" : toNumber(item?.limiteComissaoAplicado, 0),
     criadoEm: toText(item?.criadoEm),
     atualizadoEm: toText(item?.atualizadoEm)
   };
@@ -2072,6 +2272,7 @@ async function sincronizarFluxoCaixaDoSheets() {
     if (financeiroList) {
       renderizarFinanceiro();
     }
+    renderizarComissoesMensais();
 
     if (relatoriosMesCompetencia && typeof renderizarRelatorios === "function") {
       renderizarRelatorios();
@@ -2188,6 +2389,28 @@ function normalizarApartamentoSheets(item) {
   };
 }
 
+function obterChaveUnicaApartamento(item) {
+  const normalizar = (valor) => String(valor || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+
+  return `${normalizar(item?.predio)}|||${normalizar(item?.apartamento)}`;
+}
+
+function removerApartamentosDuplicados(lista) {
+  const apartamentosUnicos = new Map();
+
+  (Array.isArray(lista) ? lista : []).forEach((item) => {
+    const chave = obterChaveUnicaApartamento(item);
+    if (chave !== "|||") apartamentosUnicos.set(chave, item);
+  });
+
+  return [...apartamentosUnicos.values()];
+}
+
 function normalizarMapaAnuncioSheets(item) {
   const toBool = (valor, fallback = true) => {
     if (typeof valor === "boolean") return valor;
@@ -2213,9 +2436,11 @@ async function sincronizarApartamentosDoSheets() {
   const listaSheets = await listarApartamentosSheets();
   if (!Array.isArray(listaSheets) || !listaSheets.length) return;
 
-  const normalizados = listaSheets
-    .map(normalizarApartamentoSheets)
-    .filter((item) => item.predio && item.apartamento);
+  const normalizados = removerApartamentosDuplicados(
+    listaSheets
+      .map(normalizarApartamentoSheets)
+      .filter((item) => item.predio && item.apartamento)
+  );
 
   if (!normalizados.length) return;
 
@@ -2231,7 +2456,9 @@ async function sincronizarApartamentosDoSheets() {
   });
 
   salvarCustosApartamentosLocalStorage();
+  await sincronizarFaxineirasPendentesComApartamentos();
   renderizarApartamentos();
+  renderizarComissoesMensais();
 }
 
 async function sincronizarMapaAnunciosDoSheets() {
@@ -2265,6 +2492,48 @@ function buscarImovelMapaFixo(origem, nomeAnuncio) {
   return undefined;
 }
 
+function completarImovelComFaxineiraPadrao(imovel) {
+  if (!imovel?.predio || !imovel?.apartamento) return imovel;
+
+  const apartamentoCadastrado = custosApartamentos.find((item) => {
+    return normalizarTextoChave(item.predio) === normalizarTextoChave(imovel.predio) &&
+      normalizarTextoChave(item.apartamento) === normalizarTextoChave(imovel.apartamento);
+  });
+
+  return {
+    ...imovel,
+    faxineira: apartamentoCadastrado?.faxineiraPadrao || imovel.faxineira || ""
+  };
+}
+
+async function sincronizarFaxineirasPendentesComApartamentos() {
+  const alteradas = [];
+
+  limpezas.forEach((limpeza) => {
+    const origem = normalizarTextoChave(limpeza.origem);
+    const pendenteImportada = limpeza.status !== "concluido" && limpeza.status !== "cancelado" &&
+      ["airbnb", "booking"].includes(origem);
+    if (!pendenteImportada) return;
+
+    const apartamentoCadastrado = custosApartamentos.find((item) => {
+      return normalizarTextoChave(item.predio) === normalizarTextoChave(limpeza.predio) &&
+        normalizarTextoChave(item.apartamento) === normalizarTextoChave(limpeza.apartamento);
+    });
+    const faxineiraPadrao = apartamentoCadastrado?.faxineiraPadrao || "";
+
+    if (!faxineiraPadrao || limpeza.faxineira === faxineiraPadrao) return;
+
+    limpeza.faxineira = faxineiraPadrao;
+    alteradas.push(limpeza);
+  });
+
+  if (!alteradas.length) return;
+
+  salvarLocalStorage();
+  renderizarCards();
+  await Promise.all(alteradas.map((limpeza) => atualizarLimpezaSheets(limpeza)));
+}
+
 function buscarImovelPorAnuncio(origem, nomeAnuncio) {
   const origemNormalizada = normalizarTextoChave(origem);
   const nomeChave = normalizarTextoChave(nomeAnuncio);
@@ -2276,14 +2545,14 @@ function buscarImovelPorAnuncio(origem, nomeAnuncio) {
   });
 
   if (encontradoSheets) {
-    return {
+    return completarImovelComFaxineiraPadrao({
       predio: encontradoSheets.predio,
       apartamento: encontradoSheets.apartamento
-    };
+    });
   }
 
   const fallbackMapaFixo = buscarImovelMapaFixo(origemNormalizada, nomeAnuncio);
-  if (fallbackMapaFixo) return fallbackMapaFixo;
+  if (fallbackMapaFixo) return completarImovelComFaxineiraPadrao(fallbackMapaFixo);
 
   return undefined;
 }
@@ -2533,10 +2802,15 @@ function normalizarReservaSheets(item) {
 
   const codigoReserva = toText(item?.codigoReserva);
   if (!codigoReserva) return null;
+  const origem = toText(item?.origem);
+  const valorEfetivo = toNumber(item?.valorEfetivo, 0);
+  const valorInfo = normalizarTextoChave(origem) === "booking"
+    ? valorEfetivo
+    : toNumber(item?.valorInfo, 0);
 
   return {
     codigoReserva,
-    origem: toText(item?.origem),
+    origem,
     nomeApartamento: toText(item?.nomeApartamento),
     predio: toText(item?.predio),
     apartamento: toText(item?.apartamento),
@@ -2545,8 +2819,8 @@ function normalizarReservaSheets(item) {
     dataEntrada: toText(item?.dataEntrada),
     dataSaida: toText(item?.dataSaida),
     dataLimpeza: toText(item?.dataLimpeza),
-    valorEfetivo: toNumber(item?.valorEfetivo, 0),
-    valorInfo: toNumber(item?.valorInfo, 0),
+    valorEfetivo,
+    valorInfo,
     statusReserva: toText(item?.statusReserva),
     dataReserva: toText(item?.dataReserva),
     criadoEm: toText(item?.criadoEm),
@@ -2562,6 +2836,7 @@ async function sincronizarReservasDoSheets() {
 
   popularFiltrosReservas();
   renderizarReservas();
+  renderizarComissoesMensais();
 }
 
 function popularFiltrosReservas() {
@@ -2619,7 +2894,20 @@ function renderizarReservas() {
 
   const lista = aplicarFiltrosReservas()
     .slice()
-    .sort((a, b) => String(b.dataEntrada || "").localeCompare(String(a.dataEntrada || "")));
+    .sort((a, b) => {
+      const valorA = String(a[reservasOrdenacaoCampo] || "");
+      const valorB = String(b[reservasOrdenacaoCampo] || "");
+      return reservasOrdenacaoDirecao === "asc"
+        ? valorA.localeCompare(valorB)
+        : valorB.localeCompare(valorA);
+    });
+
+  document.querySelectorAll("[data-reservas-sort]").forEach((botao) => {
+    const ativo = botao.dataset.reservasSort === reservasOrdenacaoCampo;
+    const indicador = botao.querySelector("span");
+    botao.classList.toggle("active", ativo);
+    if (indicador) indicador.textContent = ativo ? (reservasOrdenacaoDirecao === "asc" ? "▲" : "▼") : "↕";
+  });
 
   if (!lista.length) {
     reservasList.innerHTML = '<p class="empty-reservas">Nenhuma reserva encontrada.</p>';
@@ -2660,7 +2948,7 @@ function abrirModalReserva(codigoReserva) {
     ["Prédio", reserva.predio],
     ["Apartamento", reserva.apartamento],
     ["Valor Efetivo", formatarMoeda(reserva.valorEfetivo || 0)],
-    ["Valor Informativo", formatarMoeda(reserva.valorInfo || 0)],
+    ["Base de cálculo da comissão", formatarMoeda(reserva.valorInfo || 0)],
     ["Status Reserva", reserva.statusReserva],
     ["Data Reserva", reserva.dataReserva],
     ["Criado Em", reserva.criadoEm],
@@ -2856,6 +3144,7 @@ function salvarCustosApartamento() {
   salvarApartamentoSheets(apartamento);
   fecharModalApartamento();
   renderizarApartamentos();
+  renderizarComissoesMensais();
 
   mostrarFeedback({
     titulo: "Custos atualizados",
@@ -2868,7 +3157,8 @@ function renderizarApartamentos() {
 
   apartamentosGrid.innerHTML = "";
 
-  const prediosOrdenados = [...new Set(custosApartamentos.map((item) => item.predio).filter(Boolean))].sort();
+  const apartamentosUnicos = removerApartamentosDuplicados(custosApartamentos);
+  const prediosOrdenados = [...new Set(apartamentosUnicos.map((item) => item.predio).filter(Boolean))].sort();
   const filtroPredioAtual = apartamentosFiltroPredio?.value || "";
 
   if (apartamentosFiltroPredio) {
@@ -2884,8 +3174,8 @@ function renderizarApartamentos() {
 
   const filtroPredio = apartamentosFiltroPredio?.value || "";
   const apartamentosFiltrados = filtroPredio
-    ? custosApartamentos.filter((item) => item.predio === filtroPredio)
-    : custosApartamentos;
+    ? apartamentosUnicos.filter((item) => item.predio === filtroPredio)
+    : apartamentosUnicos;
   const prediosFiltrados = [...new Set(apartamentosFiltrados.map((item) => item.predio).filter(Boolean))];
 
   if (totalPredios) totalPredios.textContent = prediosFiltrados.length;
@@ -3028,6 +3318,8 @@ function somarLancamentosPainelShortstayMes(mesCompetencia) {
         const mesLancamento = String(lancamento.dataCompetencia || lancamento.mesCompetencia || lancamento.data || "").slice(0, 7);
         const categoriaNormalizada = String(lancamento.categoria || "").toLowerCase();
         const origemNormalizada = String(lancamento.origem || "").toLowerCase();
+        if (categoria === "comissao_administrativa" && !ehFechamentoComissao(lancamento)) return false;
+        if (categoria === "taxa_fixa_administrativa" && !ehFechamentoTaxaFixa(lancamento)) return false;
         return (
           lancamento.tipo === "entrada" &&
           Number(lancamento.valor) > 0 &&
@@ -3094,6 +3386,8 @@ function somarLancamentosPainelProprietarioMes(mesCompetencia) {
         const categoriaNormalizada = String(lancamento.categoria || "").toLowerCase();
         const origemNormalizada = String(lancamento.origem || "").toLowerCase();
         const unidadeChave = `${lancamento.predio}|||${lancamento.apartamento}`;
+        if (categoria === "comissao_administrativa" && !ehFechamentoComissao(lancamento)) return false;
+        if (categoria === "taxa_fixa_administrativa" && !ehFechamentoTaxaFixa(lancamento)) return false;
         return (
           lancamento.tipo === "entrada" &&
           Number(lancamento.valor) > 0 &&
@@ -3291,12 +3585,12 @@ function atualizarDetalhamentoPainelProprietario() {
   const taxaAdm = lancamentosBase.filter((lancamento) => {
     const categoriaNormalizada = String(lancamento.categoria || "").toLowerCase();
     const origemNormalizada = String(lancamento.origem || "").toLowerCase();
-    return lancamento.tipo === "entrada" && Number(lancamento.valor) > 0 && (categoriaNormalizada === "taxa_fixa_administrativa" || origemNormalizada === "taxa_fixa_administrativa");
+    return ehFechamentoTaxaFixa(lancamento) && lancamento.tipo === "entrada" && Number(lancamento.valor) > 0 && (categoriaNormalizada === "taxa_fixa_administrativa" || origemNormalizada === "taxa_fixa_administrativa");
   });
   const comissao = lancamentosBase.filter((lancamento) => {
     const categoriaNormalizada = String(lancamento.categoria || "").toLowerCase();
     const origemNormalizada = String(lancamento.origem || "").toLowerCase();
-    return lancamento.tipo === "entrada" && Number(lancamento.valor) > 0 && (categoriaNormalizada === "comissao_administrativa" || origemNormalizada === "comissao_administrativa");
+    return ehFechamentoComissao(lancamento) && lancamento.tipo === "entrada" && Number(lancamento.valor) > 0 && (categoriaNormalizada === "comissao_administrativa" || origemNormalizada === "comissao_administrativa");
   });
   const custos = filtrarCustosProprietarioDetalhamento(mesBase, unidadesFiltro);
 
@@ -3559,19 +3853,15 @@ function preencherDataPadrao() {
 }
 
 function estaNaSemana(dataISO) {
-  const hoje = new Date();
   const dataNormalizada = normalizarDataSistema(dataISO);
+  if (!dataNormalizada) return false;
+
+  const hoje = new Date(`${hojeISO()}T00:00:00`);
   const data = new Date(`${dataNormalizada}T00:00:00`);
+  const fimPeriodo = new Date(hoje);
+  fimPeriodo.setDate(hoje.getDate() + 6);
 
-  const inicioSemana = new Date(hoje);
-  inicioSemana.setDate(hoje.getDate() - hoje.getDay());
-  inicioSemana.setHours(0, 0, 0, 0);
-
-  const fimSemana = new Date(inicioSemana);
-  fimSemana.setDate(inicioSemana.getDate() + 6);
-  fimSemana.setHours(23, 59, 59, 999);
-
-  return data >= inicioSemana && data <= fimSemana;
+  return data >= hoje && data <= fimPeriodo;
 }
 
 function estaNoMes(dataISO) {
@@ -4082,7 +4372,7 @@ function atualizarEstadoMenu(pageId) {
   });
 
   const operacaoPages = ["ativasPage", "concluidasPage", "canceladasPage"];
-  const gestaoPages = ["adminPage", "apartamentosPage", "financeiroPage", "reservasPage", "proprietariosPage"];
+  const gestaoPages = ["adminPage", "apartamentosPage", "financeiroPage", "comissoesPage", "reservasPage", "proprietariosPage"];
   const relatoriosPages = ["relatoriosPage"];
 
   if (operacaoPages.includes(pageId)) {
@@ -4117,6 +4407,10 @@ document.querySelectorAll(".menu-item").forEach((item) => {
       renderizarReservas();
     }
 
+    if (pageId === "comissoesPage") {
+      renderizarComissoesMensais();
+    }
+
     if (pageId === "relatoriosPage") {
       if (relatorioTab) relatorioTabAtual = relatorioTab;
       renderizarRelatoriosEstrutura();
@@ -4129,7 +4423,7 @@ document.querySelectorAll(".menu-item").forEach((item) => {
     atualizarEstadoMenu(pageId);
 
     const operacaoPages = ["ativasPage", "concluidasPage", "canceladasPage"];
-    const gestaoPages = ["adminPage", "apartamentosPage", "financeiroPage", "reservasPage", "proprietariosPage"];
+    const gestaoPages = ["adminPage", "apartamentosPage", "financeiroPage", "comissoesPage", "reservasPage", "proprietariosPage"];
     const relatoriosPages = ["relatoriosPage"];
     const mobileMenu = window.matchMedia("(max-width: 900px)").matches;
 
@@ -4787,7 +5081,7 @@ async function processarCSV(csv) {
       dataSaida: dataSaidaBooking,
       dataLimpeza: dataSaidaBooking,
       valorEfetivo: valorEfetivoBooking,
-      valorInfo: pagamentoTotalBooking,
+      valorInfo: valorEfetivoBooking,
       statusReserva,
       dataReserva: dataReservaBooking,
       criadoEm: new Date().toISOString(),
@@ -4823,7 +5117,7 @@ async function processarCSV(csv) {
 
 predio:dadosImovel?.predio || "A DEFINIR",
 apartamento:dadosImovel?.apartamento || "A DEFINIR",
-faxineira: dadosImovel?.faxineira || "Aniele",
+faxineira: dadosImovel?.faxineira || "Não definida",
 
       tipoFaxina: "Troca de hóspede",
       qtdHospedes: 2,
@@ -4855,7 +5149,7 @@ faxineira: dadosImovel?.faxineira || "Aniele",
           novaLimpeza,
           "receita_prevista_booking",
           valorEfetivoBooking,
-          0,
+          valorEfetivoBooking,
           {
             dataSaida: checkout
           }
@@ -5072,7 +5366,7 @@ async function processarAirbnbCSV(csv) {
 
       apartamento: dadosImovel?.apartamento || "A DEFINIR",
 
-      faxineira: dadosImovel?.faxineira || "Aniele",
+      faxineira: dadosImovel?.faxineira || "Não definida",
 
       tipoFaxina: "Troca de hóspede",
 
@@ -5104,8 +5398,8 @@ async function processarAirbnbCSV(csv) {
         detalhesFalhas.push(`Airbnb ${novaLimpeza.referenciaReserva || novaLimpeza.id}: ${result.erro}`);
       } else {
         const valorReceita = converterMoedaCsvParaNumero(obterCampoAirbnb(reserva, "Valor"));
-        const valorInfo = converterMoedaCsvParaNumero(obterCampoAirbnb(reserva, "Taxa de limpeza"));
         const taxaServico = converterMoedaCsvParaNumero(obterCampoAirbnb(reserva, "Taxa de serviço"));
+        const baseCalculoComissao = valorReceita + taxaServico;
 
         const dataEntradaAirbnb = normalizarDataSistema(obterCampoAirbnb(reserva, "Data de início"), "airbnb");
         const dataSaidaAirbnb = normalizarDataSistema(obterCampoAirbnb(reserva, "Data de término"), "airbnb");
@@ -5123,7 +5417,7 @@ async function processarAirbnbCSV(csv) {
           dataSaida: dataSaidaAirbnb,
           dataLimpeza: dataSaidaAirbnb,
           valorEfetivo: valorReceita,
-          valorInfo: valorReceita + taxaServico,
+          valorInfo: baseCalculoComissao,
           statusReserva: obterCampoAirbnb(reserva, "Tipo"),
           dataReserva: dataReservaAirbnb,
           criadoEm: new Date().toISOString(),
@@ -5136,7 +5430,7 @@ async function processarAirbnbCSV(csv) {
           novaLimpeza,
           "receita_prevista_airbnb",
           valorReceita,
-          valorInfo,
+          baseCalculoComissao,
           {
             dataEntrada: obterCampoAirbnb(reserva, "Data de in\u00EDcio"),
             dataSaida: obterCampoAirbnb(reserva, "Data de t\u00E9rmino")
@@ -5186,6 +5480,10 @@ function iniciarSistema() {
   sincronizarReservasDoSheets();
   renderizarApartamentos();
   renderizarFinanceiro();
+  if (comissoesFiltroMes && !comissoesFiltroMes.value) {
+    comissoesFiltroMes.value = String(hojeISO()).slice(0, 7);
+  }
+  renderizarComissoesMensais();
 
   filterData.value = hojeISO();
   periodoAtual = "today";
@@ -5253,6 +5551,22 @@ if (financeiroLimparFiltrosBtn) {
   }
 });
 
+document.querySelectorAll("[data-reservas-sort]").forEach((botao) => {
+  botao.addEventListener("click", () => {
+    const campo = botao.dataset.reservasSort;
+    if (!campo) return;
+
+    if (reservasOrdenacaoCampo === campo) {
+      reservasOrdenacaoDirecao = reservasOrdenacaoDirecao === "desc" ? "asc" : "desc";
+    } else {
+      reservasOrdenacaoCampo = campo;
+      reservasOrdenacaoDirecao = "desc";
+    }
+
+    renderizarReservas();
+  });
+});
+
 if (closeReservaModal) {
   closeReservaModal.addEventListener("click", fecharModalReserva);
 }
@@ -5293,6 +5607,18 @@ if (documentacaoBusca) {
 
 if (financeiroNovoLancamentoBtn) {
   financeiroNovoLancamentoBtn.addEventListener("click", abrirModalFinanceiro);
+}
+
+if (fecharComissoesMesBtn) {
+  fecharComissoesMesBtn.addEventListener("click", fecharComissoesMes);
+}
+
+if (comissoesFiltroMes) {
+  comissoesFiltroMes.addEventListener("change", renderizarComissoesMensais);
+}
+
+if (comissoesBuscaApartamento) {
+  comissoesBuscaApartamento.addEventListener("input", renderizarComissoesMensais);
 }
 
 if (closeFinanceiroModal) {
@@ -5405,6 +5731,8 @@ async function carregarLimpezasSheets() {
           : []
 
     }));
+
+    await sincronizarFaxineirasPendentesComApartamentos();
 
     salvarLocalStorage();
 

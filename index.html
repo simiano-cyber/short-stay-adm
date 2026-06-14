@@ -74,6 +74,9 @@
               <li class="menu-item" data-page="financeiroPage">
                 Financeiro
               </li>
+              <li class="menu-item" data-page="comissoesPage">
+                Comiss&atilde;o
+              </li>
               <li class="menu-item" data-page="reservasPage">
                 Reservas
               </li>
@@ -123,7 +126,7 @@
           <div class="quick-filters">
             <button class="quick-filter active-quick" data-period="today">Hoje</button>
             <button class="quick-filter" data-period="tomorrow">Amanhã</button>
-            <button class="quick-filter" data-period="week">Semana</button>
+            <button class="quick-filter" data-period="week">Próximos 7 dias</button>
             <button class="quick-filter" data-period="month">Mês</button>
             <button class="quick-filter" data-period="all">Todos</button>
           </div>
@@ -344,6 +347,34 @@
         <section class="financeiro-list" id="financeiroList"></section>
       </section>
 
+      <section class="page" id="comissoesPage">
+        <div class="header">
+          <h1>Comiss&atilde;o</h1>
+          <p>Pr&eacute;via e fechamento mensal da comiss&atilde;o e da taxa fixa por apartamento.</p>
+        </div>
+
+        <section class="comissoes-mensais">
+          <div class="comissoes-mensais-header">
+            <div>
+              <h2>Fechamento por apartamento</h2>
+              <p id="comissoesMensaisPeriodo">Selecione a compet&ecirc;ncia para consultar</p>
+            </div>
+            <div class="comissoes-fechamento-acoes">
+              <label for="comissoesFiltroMes">M&ecirc;s do fechamento</label>
+              <input type="month" id="comissoesFiltroMes">
+              <button type="button" class="financeiro-btn-primario comissoes-fechar-btn" id="fecharComissoesMesBtn">
+                Fechar m&ecirc;s
+              </button>
+            </div>
+          </div>
+          <div class="comissoes-busca">
+            <label for="comissoesBuscaApartamento">Buscar apartamento</label>
+            <input type="search" id="comissoesBuscaApartamento" placeholder="Digite o prédio, nome ou número do apartamento">
+          </div>
+          <div class="comissoes-mensais-grid" id="comissoesMensaisGrid"></div>
+        </section>
+      </section>
+
       <section class="page" id="reservasPage">
         <div class="header">
           <h1>Reservas</h1>
@@ -365,8 +396,8 @@
           <span>Código</span>
           <span>Origem</span>
           <span>Hóspede</span>
-          <span>Entrada</span>
-          <span>Saída</span>
+          <button type="button" class="reservas-sort-btn active" data-reservas-sort="dataEntrada">Entrada <span aria-hidden="true">▼</span></button>
+          <button type="button" class="reservas-sort-btn" data-reservas-sort="dataSaida">Saída <span aria-hidden="true">↕</span></button>
           <span>Prédio</span>
           <span>Apartamento</span>
           <span>Valor Efetivo</span>
@@ -734,11 +765,6 @@
 </body>
 
 </html>
-
-
-
-
-
 
 
 
